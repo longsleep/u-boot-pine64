@@ -21,8 +21,12 @@ typedef volatile unsigned char	vu_char;
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/stringify.h>
+#include <linux/sizes.h>
+
 #include <asm/ptrace.h>
 #include <stdarg.h>
+#include <boot_type.h>
+
 #if defined(CONFIG_PCI) && defined(CONFIG_4xx)
 #include <pci.h>
 #endif
@@ -734,6 +738,8 @@ int	prt_83xx_rsr  (void);
 
 /* $(CPU)/interrupts.c */
 int	interrupt_init	   (void);
+int     interrupt_exit     (void);
+
 void	timer_interrupt	   (struct pt_regs *);
 void	external_interrupt (struct pt_regs *);
 void	irq_install_handler(int, interrupt_handler_t *, void *);
@@ -798,6 +804,8 @@ int strcmp_compar(const void *, const void *);
 /* lib/time.c */
 void	udelay        (unsigned long);
 void mdelay(unsigned long);
+void __msdelay(unsigned long ms);
+void __usdelay(unsigned long usec);
 
 /* lib/uuid.c */
 #include <uuid.h>
@@ -842,6 +850,9 @@ void	puts(const char *s);
 int	printf(const char *fmt, ...)
 		__attribute__ ((format (__printf__, 1, 2)));
 int	vprintf(const char *fmt, va_list args);
+int	tick_printf(const char *fmt, ...);
+int	sunxi_tick_printf(const char *fmt, ...);
+
 
 /* stderr */
 #define eputc(c)		fputc(stderr, c)

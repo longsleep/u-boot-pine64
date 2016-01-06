@@ -17,3 +17,7 @@ obj-$(CONFIG_DIALOG_POWER) += power_dialog.o
 obj-$(CONFIG_POWER_FSL) += power_fsl.o
 obj-$(CONFIG_POWER_I2C) += power_i2c.o
 obj-$(CONFIG_POWER_SPI) += power_spi.o
+
+obj-$(CONFIG_SUNXI_AXP) += sunxi/axp.o sunxi/axp_null.o sunxi/axp_supply_null.o
+obj-$(CONFIG_SUNXI_AXP81X) += sunxi/axp81X.o
+obj-$(CONFIG_SUNXI_AXP81X) += sunxi/axp81X_supply.o

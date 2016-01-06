@@ -6,6 +6,8 @@
 #
 
 extra-y	:= start.o
+extra-y	+= spare_head.o
+extra-y	+= uboot_hash.o
 
 obj-y	+= cache_v7.o
 

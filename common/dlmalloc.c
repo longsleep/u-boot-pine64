@@ -1528,7 +1528,6 @@ void mem_malloc_init(ulong start, ulong size)
 	mem_malloc_brk = start;
 
 	memset((void *)mem_malloc_start, 0, size);
-
 	malloc_bin_reloc();
 }
 

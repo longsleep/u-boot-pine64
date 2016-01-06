@@ -41,3 +41,5 @@ obj-$(CONFIG_VIDEO_SMI_LYNXEM) += smiLynxEM.o videomodes.o
 obj-$(CONFIG_VIDEO_TEGRA) += tegra.o
 obj-$(CONFIG_VIDEO_VCXK) += bus_vcxk.o
 obj-$(CONFIG_FORMIKE) += formike.o
+obj-$(CONFIG_SUNXI_DISPLAY) += sunxi/
+

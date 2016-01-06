@@ -85,6 +85,38 @@ typedef struct global_data {
 #endif
 	unsigned long timebase_h;
 	unsigned long timebase_l;
+#ifdef CONFIG_SUNXI
+	long           securemode;
+        long           boot_card_num;
+	void          *script_mod_buf;
+	
+	ulong          script_main_key_count;
+	ulong          lockflag;
+	ulong          chargemode;
+	
+	ulong          script_reloc_buf;
+	ulong          script_reloc_size;
+
+	ulong          malloc_noncache_start;
+
+	long           key_pressd_value;
+	long           axp_power_soft_id;
+	long           power_step_level;
+	long           pmu_suspend_chgcur;
+	long           pmu_runtime_chgcur;
+	long           limit_vol;
+	long           limit_cur;
+	long           limit_pcvol;
+	long           limit_pccur;
+	ulong          force_download_uboot;
+	ulong          vbus_status;//0: unknow 1:exist 2:not exist
+        ulong          debug_mode;
+	long           force_shell;
+	long           user_debug_mode;
+	ulong          layer_para;
+	ulong          layer_hd;
+
+#endif
 	struct arch_global_data arch;	/* architecture-specific data */
 } gd_t;
 #endif

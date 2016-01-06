@@ -33,6 +33,15 @@ static int fdt_parse_prop(char *const*newval, int count, char *data, int *len);
 static int fdt_print(const char *pathp, char *prop, int depth);
 static int is_printable_string(const void *data, int len);
 
+extern int sunxi_flash_update_fdt(void* fdt_buf, size_t size);
+int save_fdt_to_flash(void)
+{
+	int ret = 0;
+	ret = sunxi_flash_update_fdt(working_fdt, fdt_totalsize(working_fdt));
+	printf("fdt write result %d\n",ret);
+	return ret;
+}
+
 /*
  * The working_fdt points to our working flattened device tree.
  */
@@ -243,7 +252,7 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	/*
 	 * Set the value of a property in the working_fdt.
 	 */
-	} else if (argv[1][0] == 's') {
+	} else if (strncmp(argv[1], "set", 3) == 0) {
 		char *pathp;		/* path */
 		char *prop;		/* property */
 		int  nodeoffset;	/* node offset from libfdt */
@@ -622,6 +631,9 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	/* resize the fdt */
 	else if (strncmp(argv[1], "re", 2) == 0) {
 		fdt_resize(working_fdt);
+	}
+	 else if (strncmp(argv[1], "save", 4) == 0) {
+	 	save_fdt_to_flash();
 	}
 	else {
 		/* Unrecognized command */
@@ -1032,6 +1044,7 @@ static char fdt_help_text[] =
 	"                                        <start> - addr of key blob\n"
 	"                                                  default gd->fdt_blob\n"
 #endif
+	"fdt save                           - write fdt to flash\n"
 	"NOTE: Dereference aliases by omiting the leading '/', "
 		"e.g. fdt print ethernet0.";
 #endif
@@ -1040,3 +1053,143 @@ U_BOOT_CMD(
 	fdt,	255,	0,	do_fdt,
 	"flattened device tree utility commands", fdt_help_text
 );
+
+
+#include <sys_config.h>
+#define FDT_PATH_MMC0	"sdmmc0"
+
+
+static int do_fdt_test(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
+{
+	//char *pathp;		/* path */
+	char *prop_u32;		/* property */
+	char *prop_u64;		/* property */
+	char *prop_str;		/* property */
+	char *prop_arr;		/* property */
+	int  nodeoffset;	/* node offset from libfdt */
+	int parentoffset;
+	u32  data32;		/* storage for the property */
+	u64  data64;
+	char *datastr;
+	int  ret;		/* return value */
+	char path_tmp[128] = {0};
+	char node_name[32] = {0};
+	u32  data_arr[4];
+	//user_gpio_set_t pin_list[20];
+	user_gpio_set_t gpio_list[1];
+
+	//const void *valuep = NULL;
+
+	prop_u32 = "prop_u32";
+	prop_u64 = "prop_u64";
+	prop_str = "prop_str";
+	prop_arr = "prop_arr";
+
+	strcpy(node_name,"mynode");
+	strcpy(path_tmp,"/");
+	strcat(path_tmp,node_name);
+
+	//create a node 
+	nodeoffset = fdt_path_offset (working_fdt, path_tmp);
+	if (nodeoffset < 0) {
+		/*
+		* Not found or something else bad happened.
+		*/
+
+		printf ("can't find node \"%s\",will add new node\n",path_tmp);
+		parentoffset = fdt_path_offset(working_fdt,"/");
+		ret = fdt_add_subnode(working_fdt,parentoffset,node_name);
+		if(ret < 0)
+		{
+			goto __ERRRO_END;
+		}
+		printf ("add new node ok\n");
+		strcpy(path_tmp,"/");
+		strcat(path_tmp,node_name);
+		nodeoffset = fdt_path_offset (working_fdt, path_tmp);
+		if (nodeoffset < 0)
+		{
+			printf ("fdt_path_offset returned %s\n",fdt_strerror(nodeoffset));
+			return 1;
+		}
+	}
+	//set property for this node
+	printf("set prop  vaule test\n");
+	data32= 0x12345678;
+	data64= 0x12345678aabbccdd;
+	datastr = "hello world";
+	
+	
+	
+	ret = fdt_setprop_u32(working_fdt,nodeoffset,prop_u32,data32);
+	if(ret < 0 ){
+		goto __ERRRO_END;
+	}
+
+	ret = fdt_setprop_u64(working_fdt,nodeoffset,prop_u64,data64);
+	if(ret < 0 ){
+		goto __ERRRO_END;
+	}
+
+	ret = fdt_setprop_string(working_fdt,nodeoffset,prop_str,datastr);
+	if(ret < 0 ){
+		goto __ERRRO_END;
+	}
+
+	data_arr[0] = cpu_to_fdt32(0x0);
+	data_arr[1] = cpu_to_fdt32(0x1);
+	data_arr[2] = cpu_to_fdt32(0x2);
+	data_arr[3] = cpu_to_fdt32(0x3);
+	ret = fdt_setprop(working_fdt, nodeoffset, prop_arr,data_arr, sizeof(data_arr));
+	if(ret < 0 ){
+		goto __ERRRO_END;
+	}
+
+	data32= 0;
+	data64= 0;
+	datastr = NULL;
+	memset(data_arr,0x0,sizeof(data_arr));
+
+	//get  property value
+	ret = fdt_getprop_u32(working_fdt,nodeoffset,prop_u32,&data32);
+	if(ret >=0)
+	{
+		printf("get property %s ok, value is 0x%x\n", prop_u32, data32);
+	}
+
+	ret = fdt_getprop_u64(working_fdt,nodeoffset,prop_u64,&data64);
+	if(ret >=0)
+	{
+		printf("get property %s ok, value is 0x%llx\n", prop_u64, data64);
+	}
+
+	ret = fdt_getprop_string(working_fdt,nodeoffset,prop_str,&datastr);
+	if(ret >=0 )
+	{
+		printf("get property %s ok, value is %s\n", prop_str, datastr);
+	}
+
+	ret = fdt_getprop_u32(working_fdt, nodeoffset,prop_arr, data_arr);
+	if(ret >= 0)
+	{
+		int len = ret;
+		int i = 0;
+		printf("get property %s ok, values is <",prop_arr );
+		for(i = 0; i < len ; i++)
+			printf("%x, ", data_arr[i]);
+		printf(">\n");
+	}
+	
+	//fdt_get_all_pin(FDT_PATH_MMC0,"pinctrl-0",pin_list);
+	fdt_get_one_gpio(FDT_PATH_MMC0,"gpio_1",gpio_list);
+	return 0;
+__ERRRO_END:
+	printf ("fdt err returned %s\n",fdt_strerror(ret));
+	return 1;
+}
+
+U_BOOT_CMD(
+	fdt_test,	3,	0,	do_fdt_test,
+	"fdt function test just in root directly", "fdt_test node"
+);
+

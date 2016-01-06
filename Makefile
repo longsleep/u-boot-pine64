@@ -11,6 +11,14 @@ SUBLEVEL =
 EXTRAVERSION =
 NAME =
 
+
+#check gcc tools chain
+#arm_toolchain_check=$(strip $(shell if [  -d ../toolchain/gcc-arm -a -d ../toolchain/gcc-aarch64 ];  then  echo yes;  fi ) )
+#ifneq ("$(arm_toolchain_check)", "yes")
+#  $(info "gcc tools chain not exist")
+#  $(info "Please run ./build.sh -t under brandy directory at the first time")
+#  $(error "")
+#endif
 # *DOCUMENTATION*
 # To see a list of typical targets execute "make help"
 # More info can be located in ./README
@@ -166,11 +174,20 @@ VPATH		:= $(srctree)$(if $(KBUILD_EXTMOD),:$(KBUILD_EXTMOD))
 
 export srctree objtree VPATH
 
+OBJTREE		:= $(if $(BUILD_DIR),$(BUILD_DIR),$(CURDIR))
+SPLTREE		:= $(OBJTREE)/spl
+SRCTREE		:= $(CURDIR)
+TOPDIR		:= $(SRCTREE)
+LNDIR		:= $(OBJTREE)
+export	TOPDIR SRCTREE OBJTREE SPLTREE
+
+
 MKCONFIG	:= $(srctree)/mkconfig
 export MKCONFIG
 
 # Make sure CDPATH settings don't interfere
 unexport CDPATH
+
 
 #########################################################################
 
@@ -624,6 +641,11 @@ libs-y += drivers/usb/musb/
 libs-y += drivers/usb/musb-new/
 libs-y += drivers/usb/phy/
 libs-y += drivers/usb/ulpi/
+libs-y += drivers/sunxi_flash/
+libs-y += drivers/rsb/
+libs-y += drivers/smc/
+libs-y += drivers/pwm/
+libs-y += drivers/clk/
 libs-y += common/
 libs-y += lib/libfdt/
 libs-$(CONFIG_API) += api/
@@ -631,6 +653,12 @@ libs-$(CONFIG_HAS_POST) += post/
 libs-y += test/
 libs-y += test/dm/
 libs-$(CONFIG_DM_DEMO) += drivers/demo/
+libs-y += usb_sunxi/
+libs-y += sprite/
+libs-y += nand_sunxi/
+libs-$(CONFIG_SUNXI_DISPLAY) += board/sunxi/cartoon/
+
+libs-$(CONFIG_CMD_SUNXI_MEMTEST) += memtest/
 
 ifneq (,$(filter $(SOC), mx25 mx27 mx5 mx6 mx31 mx35 mxs vf610))
 libs-y += arch/$(ARCH)/imx-common/
@@ -663,7 +691,11 @@ endif
 else
 PLATFORM_LIBGCC := -L $(shell dirname `$(CC) $(c_flags) -print-libgcc-file-name`) -lgcc
 endif
-PLATFORM_LIBS += $(PLATFORM_LIBGCC)
+PLATFORM_LIBS += $(PLATFORM_LIBGCC) 
+
+#if nand_sunxi/$(SOC)/lib-nand not exist ,then use the exist library
+PLATFORM_LIBS += $(shell if [ ! -d nand_sunxi/$(SOC)/lib-nand ];  then  echo "nand_sunxi/$(SOC)/libnand-$(SOC)";  fi )
+
 export PLATFORM_LIBS
 export PLATFORM_LIBGCC
 
@@ -673,6 +705,7 @@ export PLATFORM_LIBGCC
 LDPPFLAGS += \
 	-include $(srctree)/include/u-boot/u-boot.lds.h \
 	-DCPUDIR=$(CPUDIR) \
+	-DBOOTADDR=$(CONFIG_SYS_TEXT_BASE)        \
 	$(shell $(LD) --version | \
 	  sed -ne 's/GNU ld version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/-DLD_MAJOR=\1 -DLD_MINOR=\2/p')
 
@@ -706,7 +739,7 @@ DO_STATIC_RELA =
 endif
 
 # Always append ALL so that arch config.mk's can add custom ones
-ALL-y += u-boot.srec u-boot.bin System.map binary_size_check
+ALL-y += u-boot.srec u-boot.bin System.map binary_size_check u-boot-$(CONFIG_TARGET_NAME).bin
 
 ALL-$(CONFIG_ONENAND_U_BOOT) += u-boot-onenand.bin
 ifeq ($(CONFIG_SPL_FSL_PBL),y)
@@ -740,7 +773,7 @@ endif
 
 LDFLAGS_u-boot += $(LDFLAGS_FINAL)
 ifneq ($(CONFIG_SYS_TEXT_BASE),)
-LDFLAGS_u-boot += -Ttext $(CONFIG_SYS_TEXT_BASE)
+#LDFLAGS_u-boot += -Ttext $(CONFIG_SYS_TEXT_BASE)  
 endif
 
 quiet_cmd_objcopy = OBJCOPY $@
@@ -785,6 +818,7 @@ u-boot.hex u-boot.srec: u-boot FORCE
 
 OBJCOPYFLAGS_u-boot.bin := -O binary
 
+#0x600 is the size of uboot head data 
 binary_size_check: u-boot.bin System.map FORCE
 	@file_size=`stat -c %s u-boot.bin` ; \
 	map_size=$(shell cat System.map | \
@@ -802,6 +836,15 @@ u-boot.bin: u-boot FORCE
 	$(call if_changed,objcopy)
 	$(call DO_STATIC_RELA,$<,$@,$(CONFIG_SYS_TEXT_BASE))
 	$(BOARD_SIZE_CHECK)
+	@git show HEAD --pretty=format:"%H" | head -n 1 > cur.log
+	./tools/add_hash_uboot.sh -f u-boot.bin -m uboot
+
+u-boot-$(CONFIG_TARGET_NAME).bin:   u-boot.bin
+	@cp -v $<    $@
+	@cp -v $@ $(objtree)/../../tools/pack/chips/$(CONFIG_TARGET_NAME)/bin/$@
+	@if [ -d nand_sunxi/$(SOC)/lib-nand ];  then \
+		cp -v  nand_sunxi/$(SOC)/lib-nand/built-in.o nand_sunxi/$(SOC)/libnand-$(SOC); \
+	fi
 
 u-boot.ldr:	u-boot
 		$(CREATE_LDR_ENV)
@@ -814,6 +857,19 @@ OBJCOPYFLAGS_u-boot.ldr.srec := -I binary -O srec
 
 u-boot.ldr.hex u-boot.ldr.srec: u-boot.ldr FORCE
 	$(call if_changed,objcopy)
+
+boot0:
+	make -f spl_make boot0
+fes:
+	make -f spl_make fes
+sboot:
+	make -f spl_make sboot
+
+ifeq ($(CONFIG_SUNXI_SECURE_SYSTEM),y)
+spl:    fes boot0 sboot
+else
+spl:    fes boot0
+endif
 
 #
 # U-Boot entry point, needed for booting of full-blown U-Boot
@@ -1137,13 +1193,16 @@ spl/sunxi-spl.bin: spl/u-boot-spl
 tpl/u-boot-tpl.bin: tools prepare
 	$(Q)$(MAKE) obj=tpl -f $(srctree)/scripts/Makefile.spl all CONFIG_TPL_BUILD=y
 
-TAG_SUBDIRS := $(u-boot-dirs) include
+TAG_SUBDIRS := $(u-boot-dirs) include sunxi_spl
 
 FIND := find
 FINDFLAGS := -L
-
+-R --c++-kinds=+p --fields=+iaS --extra=+q
 tags ctags:
 		ctags -w -o ctags `$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) \
+						-name '*.[chS]' -print`
+boottag:
+		ctags  -R --c++-kinds=+p --fields=+iaS --extra=+q -w -o ctags  `$(FIND) $(FINDFLAGS) $(TAG_SUBDIRS) \
 						-name '*.[chS]' -print`
 
 etags:
@@ -1212,11 +1271,14 @@ include/license.h: tools/bin2header COPYING
 CLEAN_DIRS  += $(MODVERDIR)
 CLEAN_FILES += u-boot.lds include/bmp_logo.h include/bmp_logo_data.h \
 	       include/autoconf.mk* include/spl-autoconf.mk \
-	       include/tpl-autoconf.mk
+	       include/tpl-autoconf.mk \
+	       sunxi_spl/autoconf.mk* \
+	       sunxi_spl/boot0/boot0.lds \
+	       sunxi_spl/fes_init/fes_init.lds \
 
 # Directories & files removed with 'make clobber'
 CLOBBER_DIRS  += spl tpl
-CLOBBER_FILES += u-boot* MLO* SPL System.map
+CLOBBER_FILES += u-boot* MLO* SPL System.map  sunxi_spl/fes_init/fes1.* sunxi_spl/boot0/boot0_*
 
 # Directories & files removed with 'make mrproper'
 MRPROPER_DIRS  += include/config include/generated          \
@@ -1246,6 +1308,7 @@ clean: $(clean-dirs)
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '*.ko.*' -o -name '*.su' -o -name '*.cfgtmp' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
+		-o -name '*.depend' \
 		-o -name '*.symtypes' -o -name 'modules.order' \
 		-o -name modules.builtin -o -name '.tmp_*.o.*' \
 		-o -name '*.gcno' \) -type f -print | xargs rm -f

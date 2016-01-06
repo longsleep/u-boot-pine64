@@ -53,6 +53,8 @@
 #include <asm/state.h>
 #endif
 #include <linux/compiler.h>
+#include <private_uboot.h>
+#include <fdt_support.h>
 
 /*
  * Pointer to initial global data area
@@ -143,7 +145,7 @@ static int init_baud_rate(void)
 	gd->baudrate = getenv_ulong("baudrate", 10, CONFIG_BAUDRATE);
 	return 0;
 }
-
+extern char uboot_hash_value[64];
 static int display_text_info(void)
 {
 #ifndef CONFIG_SANDBOX
@@ -151,7 +153,7 @@ static int display_text_info(void)
 
 	bss_start = (ulong)&__bss_start;
 	bss_end = (ulong)&__bss_end;
-
+	printf("uboot commit : %s \n",uboot_hash_value);
 	debug("U-Boot code: %08X -> %08lX  BSS: -> %08lX\n",
 	      CONFIG_SYS_TEXT_BASE, bss_start, bss_end);
 #endif
@@ -160,8 +162,8 @@ static int display_text_info(void)
 	debug("Modem Support enabled\n");
 #endif
 #ifdef CONFIG_USE_IRQ
-	debug("IRQ Stack: %08lx\n", IRQ_STACK_START);
-	debug("FIQ Stack: %08lx\n", FIQ_STACK_START);
+	//debug("IRQ Stack: %08lx\n", IRQ_STACK_START);
+	//debug("FIQ Stack: %08lx\n", FIQ_STACK_START);
 #endif
 
 	return 0;
@@ -192,6 +194,7 @@ static int init_func_ram(void)
 }
 #endif
 
+#if 0
 static int show_dram_config(void)
 {
 	unsigned long long size;
@@ -218,6 +221,7 @@ static int show_dram_config(void)
 
 	return 0;
 }
+#endif
 
 void __dram_init_banksize(void)
 {
@@ -265,7 +269,7 @@ static int zero_global_data(void)
 static int setup_mon_len(void)
 {
 #ifdef __ARM__
-	gd->mon_len = (ulong)&__bss_end - (ulong)_start;
+	gd->mon_len = (ulong)&__bss_end - (ulong)_TEXT_BASE;
 #elif defined(CONFIG_SANDBOX)
 	gd->mon_len = (ulong)&_end - (ulong)_init;
 #else
@@ -348,6 +352,18 @@ static int setup_fdt(void)
 		puts("Failed to read control FDT\n");
 		return -1;
 	}
+#elif defined(CONFIG_SUNXI)
+	if(uboot_spare_head.boot_data.dtb_offset != 0)
+	{
+		gd->fdt_blob = (void*)(ulong)(uboot_spare_head.boot_data.dtb_offset+CONFIG_SYS_TEXT_BASE);
+		//axp will use this fdt file,set address here
+		set_working_fdt_addr((void*)gd->fdt_blob);
+	}
+	else
+	{
+		gd->fdt_blob = 0;
+	}
+	return 0;
 #endif
 	/* Allow the early environment to override the fdt address */
 	gd->fdt_blob = (void *)getenv_ulong("fdtcontroladdr", 16,
@@ -510,13 +526,22 @@ static int reserve_uboot(void)
 	return 0;
 }
 
+
 #ifndef CONFIG_SPL_BUILD
 /* reserve memory for malloc() area */
 static int reserve_malloc(void)
 {
+	
 	gd->start_addr_sp = gd->start_addr_sp - TOTAL_MALLOC_LEN;
 	debug("Reserving %dk for malloc() at: %08lx\n",
 			TOTAL_MALLOC_LEN >> 10, gd->start_addr_sp);
+
+#ifdef CONFIG_NONCACHE_MEMORY
+	gd->start_addr_sp -= CONFIG_NONCACHE_MEMORY_SIZE;
+	debug("Reserving %dk for nocache malloc() at: %08lx\n",
+			CONFIG_NONCACHE_MEMORY_SIZE >> 10, gd->start_addr_sp);
+	gd->malloc_noncache_start = gd->start_addr_sp;
+#endif
 	return 0;
 }
 
@@ -549,6 +574,30 @@ static int reserve_global_data(void)
 	return 0;
 }
 
+
+static int reserve_sysconfig(void)
+{
+#ifdef CONFIG_RELOCATE_SYSCONIFG
+	/*
+	 * reserve memory for sysconfig
+	 * round down to next 4 kB limit
+	 */
+	ulong sys_config_size = (uboot_spare_head.boot_head.length - uboot_spare_head.boot_head.uboot_length);
+	sys_config_size = ((sys_config_size + 4096-1)/4096)*4096;
+
+
+	gd->start_addr_sp -= sys_config_size;
+
+	//syscfg addr after reloc 
+	gd->script_reloc_buf  = gd->start_addr_sp;
+	gd->script_reloc_size = sys_config_size;  //align size
+	debug("Reserving %ldk for SYS_CONFIG at: %08lx\n", sys_config_size >> 10,gd->relocaddr);
+#endif
+	return 0;
+}
+
+
+
 static int reserve_fdt(void)
 {
 	/*
@@ -557,7 +606,14 @@ static int reserve_fdt(void)
 	 * will be relocated with other data.
 	 */
 	if (gd->fdt_blob) {
+		if(fdt_check_header(gd->fdt_blob) != 0)
+		{
+			printf("fdt header check error\n");
+			return -1;
+		}
+		//reserve memory for expand dtb ,because cmd_fdt will update the base dtb
 		gd->fdt_size = ALIGN(fdt_totalsize(gd->fdt_blob) + 0x1000, 32);
+		fdt_set_totalsize((void*)gd->fdt_blob,gd->fdt_size);
 
 		gd->start_addr_sp -= gd->fdt_size;
 		gd->new_fdt = map_sysmem(gd->start_addr_sp, gd->fdt_size);
@@ -721,17 +777,30 @@ static int reloc_fdt(void)
 	if (gd->new_fdt) {
 		memcpy(gd->new_fdt, gd->fdt_blob, gd->fdt_size);
 		gd->fdt_blob = gd->new_fdt;
+		printf("fdt addr: 0x%lx\n",(ulong)gd->fdt_blob);
 	}
 
 	return 0;
 }
 
+static int reloc_sysconfig(void)
+{
+#ifdef CONFIG_RELOCATE_SYSCONIFG	
+	ulong syscfg_offset = uboot_spare_head.boot_head.uboot_length;
+	ulong syscfg_length = uboot_spare_head.boot_head.length - uboot_spare_head.boot_head.uboot_length;
+	//copy sys_config data to reloc address
+	memcpy((void*)(gd->script_reloc_buf),(void*)(CONFIG_SYS_TEXT_BASE+syscfg_offset),syscfg_length );
+#endif
+	return 0;
+}
+
 static int setup_reloc(void)
 {
+	//set code relocaddr to start of the code section  
 	gd->reloc_off = gd->relocaddr - CONFIG_SYS_TEXT_BASE;
 	memcpy(gd->new_gd, (char *)gd, sizeof(gd_t));
 
-	debug("Relocation Offset is: %08lx\n", gd->reloc_off);
+	printf("Relocation Offset is: %08lx\n", gd->reloc_off);
 	debug("Relocating to %08lx, new gd at %08lx, sp at %08lx\n",
 	      gd->relocaddr, (ulong)map_to_sysmem(gd->new_gd),
 	      gd->start_addr_sp);
@@ -775,6 +844,32 @@ static int mark_bootstage(void)
 
 	return 0;
 }
+extern s32 sunxi_rsb_init(u32 slave_id);
+
+static int init_func_pmubus(void)
+{
+	s32 ret = 0;
+
+#if defined(CONFIG_AXP_USE_RSB)
+	ret = sunxi_rsb_init(0);
+#elif defined (CONFIG_AXP_USE_I2C)
+
+#else
+
+#endif
+	tick_printf("pmbus:   %s\n", ret? "not ready":"ready");
+	return (0);
+}
+
+
+extern int power_source_init(void);
+extern int check_update_key(void);
+extern int check_uart_input(void);
+extern int get_debugmode_flag(void);
+extern int sunxi_probe_securemode(void);
+extern int smc_init(void);
+
+int script_init(void);
 
 static init_fnc_t init_sequence_f[] = {
 #ifdef CONFIG_SANDBOX
@@ -788,6 +883,7 @@ static init_fnc_t init_sequence_f[] = {
 	probecpu,
 #endif
 	arch_cpu_init,		/* basic arch cpu dependent setup */
+	sunxi_probe_securemode,
 #ifdef CONFIG_X86
 	cpu_init_f,		/* TODO(sjg@chromium.org): remove */
 # ifdef CONFIG_OF_CONTROL
@@ -836,12 +932,14 @@ static init_fnc_t init_sequence_f[] = {
 	init_baud_rate,		/* initialze baudrate settings */
 	serial_init,		/* serial communications setup */
 	console_init_f,		/* stage 1 init of console */
+	script_init,
 #ifdef CONFIG_SANDBOX
 	sandbox_early_getopt_check,
 #endif
 #ifdef CONFIG_OF_CONTROL
 	fdtdec_prepare_fdt,
 #endif
+	get_debugmode_flag,
 	display_options,	/* say that we are here */
 	display_text_info,	/* show debugging info if required */
 #if defined(CONFIG_MPC8260)
@@ -876,6 +974,11 @@ static init_fnc_t init_sequence_f[] = {
 	dram_init_f,		/* configure available RAM banks */
 	calculate_relocation_address,
 #endif
+	smc_init,
+	init_func_pmubus,
+	power_source_init,
+	check_update_key,
+	check_uart_input,
 	announce_dram_init,
 	/* TODO: unify all these dram functions? */
 #ifdef CONFIG_ARM
@@ -938,9 +1041,10 @@ static init_fnc_t init_sequence_f[] = {
 	setup_machine,
 	reserve_global_data,
 	reserve_fdt,
+	reserve_sysconfig,
 	reserve_stacks,
 	setup_dram_config,
-	show_dram_config,
+	//show_dram_config,
 #ifdef CONFIG_PPC
 	setup_board_part1,
 	INIT_FUNC_WATCHDOG_RESET
@@ -952,12 +1056,14 @@ static init_fnc_t init_sequence_f[] = {
 #endif
 	INIT_FUNC_WATCHDOG_RESET
 	reloc_fdt,
+	reloc_sysconfig,
 	setup_reloc,
 #if !defined(CONFIG_ARM) && !defined(CONFIG_SANDBOX)
 	jump_to_copy,
 #endif
 	NULL,
 };
+extern int sunxi_board_run_fel_eraly(void);
 
 void board_init_f(ulong boot_flags)
 {
@@ -982,9 +1088,13 @@ void board_init_f(ulong boot_flags)
 
 	gd->flags = boot_flags;
 	gd->have_console = 0;
+	gd->debug_mode = 1;
 
 	if (initcall_run_list(init_sequence_f))
-		hang();
+	{
+		//hang();
+		sunxi_board_run_fel_eraly();
+	}
 
 #if !defined(CONFIG_ARM) && !defined(CONFIG_SANDBOX)
 	/* NOTREACHED - jump_to_copy() does not return */

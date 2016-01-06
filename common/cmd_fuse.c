@@ -1,6 +1,6 @@
 /*
  * (C) Copyright 2009-2013 ADVANSEE
- * Benoît Thébaudeau <benoit.thebaudeau@advansee.com>
+ * Beno卯t Th茅baudeau <benoit.thebaudeau@advansee.com>
  *
  * Based on the mpc512x iim code:
  * Copyright 2008 Silicon Turnkey Express, Inc.

@@ -13,9 +13,14 @@ OUTPUT_ARCH(aarch64)
 ENTRY(_start)
 SECTIONS
 {
-	. = 0x00000000;
+    . = BOOTADDR;
+    . = ALIGN(4);
+	.head :
+	{
+		CPUDIR/spare_head.o (.data*)
+	}
+    . = ALIGN(8);
 
-	. = ALIGN(8);
 	.text :
 	{
 		*(.__image_copy_start)

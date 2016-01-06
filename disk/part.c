@@ -24,8 +24,13 @@ struct block_drvr {
 	block_dev_desc_t* (*get_dev)(int dev);
 	int (*select_hwpart)(int dev_num, int hwpart);
 };
+extern block_dev_desc_t *sunxi_flash_get_dev(int dev);
 
 static const struct block_drvr block_drvr[] = {
+	
+#if defined(CONFIG_ALLWINNER)
+	{ .name = "sunxi_flash", .get_dev = sunxi_flash_get_dev, },
+#endif
 #if defined(CONFIG_CMD_IDE)
 	{ .name = "ide", .get_dev = ide_get_dev, },
 #endif

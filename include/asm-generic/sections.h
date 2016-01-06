@@ -73,6 +73,7 @@ extern char __image_copy_start[];
 extern char __image_copy_end[];
 extern char __rel_dyn_start[];
 extern char __rel_dyn_end[];
+extern ulong _TEXT_BASE;	/* code start */
 
 #else /* don't use offsets: */
 

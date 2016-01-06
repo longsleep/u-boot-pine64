@@ -156,6 +156,7 @@ typedef struct SCSI_cmd_block{
 #define SCSI_WRT_VERIFY	0x2E		/* Write and Verify (O) */
 #define SCSI_WRITE_LONG	0x3F		/* Write Long (O) */
 #define SCSI_WRITE_SAME	0x41		/* Write Same (O) */
+#define SCSI_RD_FMT_CAPAC 0x23      /* Read format caacity */
 
 
 /****************************************************************************

@@ -5,7 +5,8 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-extra-y	:= start.o
+extra-y	+= start.o
+extra-y	+= spare_head.o
 
 obj-y	+= cpu.o
 obj-y	+= generic_timer.o

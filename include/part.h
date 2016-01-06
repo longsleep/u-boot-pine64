@@ -38,6 +38,44 @@ typedef struct block_dev_desc {
 	unsigned long   (*block_erase)(int dev,
 				       lbaint_t start,
 				       lbaint_t blkcnt);
+
+	int (*block_secure_wipe)(int dev,
+						unsigned int start,
+						unsigned int blkcnt,
+						unsigned int *skip_space);
+	int (*block_mmc_erase)(int dev,
+						unsigned int start,
+						unsigned int blkcnt,
+						unsigned int *skip_space);
+	int (*block_mmc_trim)(int dev,
+						unsigned int start,
+						unsigned int blkcnt);
+	int (*block_mmc_discard)(int dev,
+						unsigned int start,
+						unsigned int blkcnt);
+	int (*block_mmc_sanitize)(int dev);
+	int (*block_mmc_secure_erase)(int dev,
+						unsigned int start,
+						unsigned int blkcnt,
+						unsigned int *skip_space);
+	int (*block_mmc_secure_trim)(int dev,
+						unsigned int start,
+						unsigned int blkcnt);
+	unsigned long	 (*block_read_mass_pro)(int dev,
+				      unsigned long start,
+				      lbaint_t blkcnt,
+				      void *buffer);
+	unsigned long	(*block_write_mass_pro)(int dev,
+				       unsigned long start,
+				       lbaint_t blkcnt,
+				       const void *buffer);
+	int	(*block_read_secure)(s32 dev_num,
+						u32 item,u8 *buf ,
+						lbaint_t blkcnt);
+	int	(*block_write_secure)(s32 dev_num,
+						u32 item,u8 *buf ,
+						lbaint_t blkcnt);
+	int	(*block_get_item_secure)(void);
 	void		*priv;		/* driver private struct pointer */
 }block_dev_desc_t;
 
@@ -60,7 +98,9 @@ typedef struct block_dev_desc {
 #define IF_TYPE_SD		7
 #define IF_TYPE_SATA		8
 #define IF_TYPE_HOST		9
-#define IF_TYPE_MAX		10	/* Max number of IF_TYPE_* supported */
+#define IF_TYPE_NAND		10
+#define IF_TYPE_SUNXI_FLASH     11
+#define IF_TYPE_MAX		12	/* Max number of IF_TYPE_* supported */
 
 /* Part types */
 #define PART_TYPE_UNKNOWN	0x00
@@ -69,6 +109,7 @@ typedef struct block_dev_desc {
 #define PART_TYPE_ISO		0x03
 #define PART_TYPE_AMIGA		0x04
 #define PART_TYPE_EFI		0x05
+
 
 /*
  * Type string for U-Boot bootable partitions

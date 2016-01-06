@@ -26,8 +26,8 @@ OBJCOPYFLAGS :=
 # CPU-specific code.
 CPUDIR=arch/$(ARCH)/cpu$(if $(CPU),/$(CPU),)
 
-sinclude $(srctree)/arch/$(ARCH)/config.mk	# include architecture dependend rules
 sinclude $(srctree)/$(CPUDIR)/config.mk		# include  CPU	specific rules
+sinclude $(srctree)/arch/$(ARCH)/config.mk	# include architecture dependend rules
 
 ifdef	SOC
 sinclude $(srctree)/$(CPUDIR)/$(SOC)/config.mk	# include  SoC	specific rules

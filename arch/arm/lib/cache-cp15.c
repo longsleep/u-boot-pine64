@@ -77,6 +77,19 @@ __weak void dram_bank_mmu_setup(int bank)
 		set_section_dcache(i, DCACHE_WRITEBACK);
 #endif
 	}
+
+#ifdef CONFIG_NONCACHE_MEMORY
+	/* prepare a space as noncachable*/
+	if(!gd->malloc_noncache_start)
+	{
+		printf("this memory range for noncachable is invalid\n");
+	}
+	else
+	{
+		for (i = (gd->malloc_noncache_start>>20); i < (gd->malloc_noncache_start + CONFIG_NONCACHE_MEMORY_SIZE)>>20; i++)
+		set_section_dcache(i,DCACHE_OFF);
+	}
+#endif
 }
 
 /* to activate the MMU we need to set up virtual memory: use 1M areas */
@@ -93,6 +106,7 @@ static inline void mmu_setup(void)
 	for (i = 0; i < CONFIG_NR_DRAM_BANKS; i++) {
 		dram_bank_mmu_setup(i);
 	}
+
 
 	/* Copy the page table address to cp15 */
 	asm volatile("mcr p15, 0, %0, c2, c0, 0"

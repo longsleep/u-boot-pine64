@@ -43,7 +43,18 @@ obj-y += cmd_boot.o
 obj-$(CONFIG_CMD_BOOTM) += cmd_bootm.o bootm.o bootm_os.o
 obj-y += cmd_help.o
 obj-y += cmd_version.o
+obj-$(CONFIG_CMD_BOOTA) += cmd_boota.o cmd_sunxi_flash.o
+obj-$(CONFIG_CMD_SUNXI_SPRITE) += cmd_sunxi_sprite.o
+obj-$(CONFIG_CMD_SUNXI_TIMER) += cmd_sunxi_timer.o
+obj-$(CONFIG_CMD_SUNXI_EFEX) += cmd_sunxi_efex.o
+obj-$(CONFIG_CMD_SUNXI_SHUTDOWN) += cmd_sunxi_shutdown.o
+obj-$(CONFIG_CMD_SUNXI_MEMTEST) += cmd_sunxi_memtest.o
+ifdef CONFIG_SUNXI_DISPLAY
+obj-$(CONFIG_CMD_SUNXI_BMP) += cmd_sunxi_bmp.o
+endif
 
+obj-$(CONFIG_CMD_SUNXI_BURN) += cmd_sunxi_burn.o
+obj-$(CONFIG_CMD_MODIFY_SYSCONFIG) += cmd_modify_sysconfig.o
 # environment
 obj-y += env_attr.o
 obj-y += env_callback.o
@@ -57,6 +68,7 @@ obj-$(CONFIG_ENV_IS_IN_NVRAM) += env_embedded.o
 obj-$(CONFIG_ENV_IS_IN_FLASH) += env_flash.o
 obj-$(CONFIG_ENV_IS_IN_MMC) += env_mmc.o
 obj-$(CONFIG_ENV_IS_IN_FAT) += env_fat.o
+obj-y += env_sunxi_flash.o
 obj-$(CONFIG_ENV_IS_IN_NAND) += env_nand.o
 obj-$(CONFIG_ENV_IS_IN_NVRAM) += env_nvram.o
 obj-$(CONFIG_ENV_IS_IN_ONENAND) += env_onenand.o
@@ -265,5 +277,7 @@ obj-$(CONFIG_FIT_SIGNATURE) += image-sig.o
 obj-$(CONFIG_IO_TRACE) += iotrace.o
 obj-y += memsize.o
 obj-y += stdio.o
+obj-y += sunxi_mem_alloc.o
+obj-y += cmd_sunxi_smc.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)

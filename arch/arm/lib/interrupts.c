@@ -21,8 +21,14 @@
 
 #include <common.h>
 #include <asm/proc-armv/ptrace.h>
+#include <asm/arch/intc.h>
+#include <asm/arch/gic.h>
+#include <asm/io.h>
+#include <private_uboot.h>
 
 DECLARE_GLOBAL_DATA_PTR;
+
+int arch_interrupt_init (void);
 
 #ifdef CONFIG_USE_IRQ
 int interrupt_init (void)
@@ -37,6 +43,12 @@ int interrupt_init (void)
 	return arch_interrupt_init();
 }
 
+int interrupt_exit(void)
+{
+    return arch_interrupt_exit();
+}
+
+
 /* enable IRQ interrupts */
 void enable_interrupts (void)
 {
@@ -47,6 +59,17 @@ void enable_interrupts (void)
 			     : "=r" (temp)
 			     :
 			     : "memory");
+}
+
+/* get  interrupts state */
+int  interrupts_is_open(void)
+{
+	unsigned long temp = 0;
+	__asm__ __volatile__("mrs %0, cpsr\n"
+			     : "=r" (temp)
+			     :
+			     : "memory");
+	return ((temp&0x80)==0) ? 1:0;
 }
 
 
@@ -74,6 +97,11 @@ int interrupt_init (void)
 	IRQ_STACK_START_IN = gd->irq_sp + 8;
 
 	return 0;
+}
+
+int interrupt_exit(void)
+{
+    return 0;
 }
 
 void enable_interrupts (void)
@@ -180,3 +208,4 @@ void do_irq (struct pt_regs *pt_regs)
 	bad_mode ();
 }
 #endif
+

@@ -12,7 +12,7 @@
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
-
+#include <config.h>
 /*
  *************************************************************************
  *
@@ -48,7 +48,7 @@
 #endif
 
 _start:
-	ldr	pc, _reset
+	ldr	pc, _reset_vec
 	ldr	pc, _undefined_instruction
 	ldr	pc, _software_interrupt
 	ldr	pc, _prefetch_abort
@@ -67,6 +67,12 @@ _start:
  *************************************************************************
  */
 
+ /*
+ *use _reset_vec as the variable name because the name "_reset" has been used in other place
+ *export _reset_vec for fix the vector table after code relocate
+ *modify by wangwei. 2014-12-01
+ */
+	.globl	_reset_vec
 	.globl	_undefined_instruction
 	.globl	_software_interrupt
 	.globl	_prefetch_abort
@@ -75,7 +81,7 @@ _start:
 	.globl	_irq
 	.globl	_fiq
 
-_reset:			.word reset
+_reset_vec:			.word reset
 _undefined_instruction:	.word undefined_instruction
 _software_interrupt:	.word software_interrupt
 _prefetch_abort:	.word prefetch_abort

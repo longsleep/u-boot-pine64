@@ -39,6 +39,7 @@
 #include <post.h>
 #include <logbuff.h>
 #include <asm/sections.h>
+#include <private_uboot.h>
 
 #ifdef CONFIG_BITBANGMII
 #include <miiphy.h>
@@ -112,8 +113,8 @@ static int display_banner(void)
 	debug("Modem Support enabled\n");
 #endif
 #ifdef CONFIG_USE_IRQ
-	debug("IRQ Stack: %08lx\n", IRQ_STACK_START);
-	debug("FIQ Stack: %08lx\n", FIQ_STACK_START);
+	//debug("IRQ Stack: %08lx\n", IRQ_STACK_START);
+	//debug("FIQ Stack: %08lx\n", FIQ_STACK_START);
 #endif
 
 	return (0);
@@ -228,6 +229,9 @@ static int mark_bootstage(void)
 	return 0;
 }
 
+extern int power_source_init(void);
+
+
 init_fnc_t *init_sequence[] = {
 	arch_cpu_init,		/* basic arch cpu dependent setup */
 	mark_bootstage,
@@ -256,6 +260,7 @@ init_fnc_t *init_sequence[] = {
 #if defined(CONFIG_HARD_I2C) || defined(CONFIG_SYS_I2C)
 	init_func_i2c,
 #endif
+	power_source_init,
 	dram_init,		/* configure available RAM banks */
 	NULL,
 };
@@ -271,10 +276,12 @@ void board_init_f(ulong bootflag)
 #endif
 	void *new_fdt = NULL;
 	size_t fdt_size = 0;
+	ulong head_align_size = get_spare_head_size();
 
 	memset((void *)gd, 0, sizeof(gd_t));
 
-	gd->mon_len = (ulong)&__bss_end - (ulong)_start;
+    //_start   is the text section start address  in uboot ,not the  CONFIG_SYS_TEXT_BASE
+	gd->mon_len = (ulong)&__bss_end - (ulong)_start + head_align_size;
 #ifdef CONFIG_OF_EMBED
 	/* Get a pointer to the FDT */
 	gd->fdt_blob = __dtb_dt_begin;
@@ -299,7 +306,6 @@ void board_init_f(ulong bootflag)
 			"doc/README.fdt-control");
 	}
 #endif
-
 	debug("monitor len: %08lX\n", gd->mon_len);
 	/*
 	 * Ram is setup, size stored in gd !!
@@ -449,10 +455,15 @@ void board_init_f(ulong bootflag)
 	dram_init_banksize();
 	display_dram_config();	/* and display it */
 
-	gd->relocaddr = addr;
+	//relocate address need add head size
+	gd->relocaddr = addr + head_align_size ;
 	gd->start_addr_sp = addr_sp;
-	gd->reloc_off = addr - (ulong)&_start;
-	debug("relocation Offset is: %08lx\n", gd->reloc_off);
+	gd->reloc_off = (addr + head_align_size) - (ulong)&_start ;
+	printf("relocation Offset is: %08lx\n", gd->reloc_off);
+
+	//copy head data to reloc address
+	memcpy((void *)addr, (void *)_TEXT_BASE, sizeof(struct spare_boot_head_t));
+
 	if (new_fdt) {
 		memcpy(new_fdt, gd->fdt_blob, fdt_size);
 		gd->fdt_blob = new_fdt;
@@ -512,7 +523,6 @@ void board_init_r(gd_t *id, ulong dest_addr)
 #if !defined(CONFIG_SYS_NO_FLASH)
 	ulong flash_size;
 #endif
-
 	gd->flags |= GD_FLG_RELOC;	/* tell others: relocation done */
 	bootstage_mark_name(BOOTSTAGE_ID_START_UBOOT_R, "board_init_r");
 
@@ -521,7 +531,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	/* Enable caches */
 	enable_caches();
 
-	debug("monitor flash len: %08lX\n", monitor_flash_len);
+	
 	board_init();	/* Setup chipselects */
 	/*
 	 * TODO: printing of the clock inforamtion of the board is now
@@ -533,7 +543,7 @@ void board_init_r(gd_t *id, ulong dest_addr)
 	set_cpu_clk_info(); /* Setup clock information */
 #endif
 	serial_initialize();
-
+	debug("monitor flash len: %08lX\n", monitor_flash_len);
 	debug("Now running in RAM - U-Boot at: %08lx\n", dest_addr);
 
 #ifdef CONFIG_LOGBUFFER

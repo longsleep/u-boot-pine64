@@ -481,6 +481,9 @@ int printf(const char *fmt, ...)
 	uint i;
 	char printbuffer[CONFIG_SYS_PBSIZE];
 
+	if(!gd->debug_mode)
+		return 0;
+
 #if !defined(CONFIG_SANDBOX) && !defined(CONFIG_PRE_CONSOLE_BUFFER)
 	if (!gd->have_console)
 		return 0;
@@ -498,6 +501,57 @@ int printf(const char *fmt, ...)
 	puts(printbuffer);
 	return i;
 }
+
+int tick_printf(const char *fmt, ...)
+{
+	va_list args;
+	uint i,msecond;
+	char printbuffer[CONFIG_SYS_PBSIZE-12];
+	char printbuffer_with_timestamp[CONFIG_SYS_PBSIZE];
+
+	if(!gd->debug_mode)
+		return 0;
+
+	va_start(args, fmt);
+
+	/* For this to work, printbuffer must be larger than
+	 * anything we ever want to print.
+	 */
+	msecond=get_timer_masked();
+	vsprintf(printbuffer, fmt, args);
+	i = sprintf(printbuffer_with_timestamp,"[%7u.%03u]%s",msecond/1000,msecond%1000,printbuffer);
+	va_end(args);
+	/* Print the string */
+	puts(printbuffer_with_timestamp);
+
+	return i;
+
+}
+
+int sunxi_tick_printf(const char *fmt, ...)
+{
+	va_list args;
+	uint i,msecond;
+	char printbuffer[CONFIG_SYS_PBSIZE-12];
+	char printbuffer_with_timestamp[CONFIG_SYS_PBSIZE];
+
+	va_start(args, fmt);
+
+	/* For this to work, printbuffer must be larger than
+	 * anything we ever want to print.
+	 */
+	msecond=get_timer_masked();
+	vsprintf(printbuffer, fmt, args);
+	i = sprintf(printbuffer_with_timestamp,"[%7u.%03u]%s",msecond/1000,msecond%1000,printbuffer);
+	va_end(args);
+	/* Print the string */
+	puts(printbuffer_with_timestamp);
+
+	return i;
+
+}
+
+
 
 int vprintf(const char *fmt, va_list args)
 {

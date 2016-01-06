@@ -29,6 +29,9 @@
  * setup stack
  *
  *************************************************************************/
+.globl	_TEXT_BASE
+_TEXT_BASE:
+	.word	CONFIG_SYS_TEXT_BASE
 
 	.globl	reset
 
