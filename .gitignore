@@ -88,3 +88,5 @@ GTAGS
 *.orig
 *~
 \#*#
+
+/cur.log
