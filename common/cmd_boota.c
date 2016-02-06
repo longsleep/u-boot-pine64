@@ -246,13 +246,12 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		(ulong)gd->script_reloc_buf,
 		(ulong)(SYS_CONFIG_MEMBASE),
 		gd->script_reloc_size);
-#if 0
 	debug("moving platform.dtb from %lx to: %lx, size 0x%lx\n", 
 		(ulong)dtb_base,
 		(ulong)(gd->fdt_blob),gd->fdt_size);
 
 	memcpy((void*)SYS_CONFIG_MEMBASE, (void*)gd->script_reloc_buf,gd->script_reloc_size);
-
+#if 0
 	update_bootargs();
 
 #endif
