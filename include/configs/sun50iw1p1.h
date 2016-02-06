@@ -336,19 +336,24 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"bootdelay=3\0" \
-	"bootcmd=run setargs_nand boot_normal\0" \
+	"bootcmd=run load_dtb load_kernel set_cmdline boot_kernel\0" \
 	"console=ttyS0,115200\0" \
-	"nand_root=/dev/nandd\0" \
-	"mmc_root=/dev/mmcblk0p7\0" \
-	"init=/init\0" \
-	"loglevel=8\0" \
-	"setargs_nand=setenv bootargs console=${console} root=${nand_root}" \
-	"init=${init} loglevel=${loglevel} partitions=${partitions}\0" \
-	"setargs_mmc=setenv bootargs console=${console} root=${mmc_root}" \
-	"init=${init} loglevel=${loglevel} partitions=${partitions}\0" \
-	"boot_normal=sunxi_flash read 4007f800 boot;boota 4007f800\0" \
-	"boot_recovery=sunxi_flash read 4007f800 recovery;boota 4007f800\0" \
-	"boot_fastboot=fastboot\0"
+	"root=/dev/mmcblk0p2\0" \
+	"fdt_addr=45000000\0" \
+	"kernel_addr=4107f800\0" \
+	"kernel_filename=kernel.img\0" \
+	"fdt_filename=pine64_plus.dtb\0" \
+	"load_dtb=" \
+		"fatload mmc 0:1 ${fdt_addr} ${fdt_filename}; " \
+		"fdt addr ${fdt_addr}; fdt resize\0" \
+	"load_kernel="\
+		"fatload mmc 0:1 ${kernel_addr} ${kernel_filename}\0" \
+	"boot_kernel=boota ${kernel_addr}\0" \
+	"set_cmdline=" \
+		"setenv bootargs console=${console} " \
+		"earlycon=uart,mmio32,0x01c28000 " \
+		"root=${root} ro " \
+		"rootwait\0" 
 
 #define CONFIG_SUNXI_SPRITE_ENV_SETTINGS	\
 	"bootdelay=0\0" \
@@ -357,7 +362,7 @@
 	"sunxi_sprite_test=sprite_test read\0"
 
 #define CONFIG_BOOTDELAY	1
-#define CONFIG_BOOTCOMMAND	"nand read 50000000 boot;boota 50000000"
+#define CONFIG_BOOTCOMMAND	"boota"
 #define CONFIG_SYS_BOOT_GET_CMDLINE
 #define CONFIG_AUTO_COMPLETE
 
