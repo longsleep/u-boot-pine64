@@ -144,7 +144,7 @@ __LOOP:
 }
 #endif
 
-int do_boota_linux (struct andr_img_hdr *hdr,ulong dtb_base)
+int do_boota_linux (struct andr_img_hdr *hdr,void * dtb_base)
 {
 	int fake = 0;
 	Kernel_Entry kernel_entry = NULL;
@@ -221,7 +221,7 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong os_data,os_len;
 	//ulong rd_data,rd_len;
 	struct  andr_img_hdr *fb_hdr = NULL;
-	ulong dtb_load_addr = getenv_hex("fdtaddr", 0);
+	void *dtb_base  = (void*)getenv_hex("fdtaddr", 0);
 
 	if (argc < 2)
 		return cmd_usage(cmdtp);
@@ -263,7 +263,7 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	//fdt_blob  save the addree of  working_fdt
 	memcpy((void*)dtb_base, gd->fdt_blob,gd->fdt_size);
 #endif
-	if(fdt_check_header((void *)dtb_load_addr) !=0 )
+	if(fdt_check_header(dtb_base) !=0 )
 	{
 		printf("fdt header check error befor boot\n");
 		return -1;
@@ -271,7 +271,7 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	tick_printf("ready to boot\n");
 #if 1
-	do_boota_linux(fb_hdr, dtb_load_addr);
+	do_boota_linux(fb_hdr, dtb_base);
 	puts("Boot linux failed, control return to monitor\n");
 #else
 	puts("Boot linux test ok, control return to monitor\n");
