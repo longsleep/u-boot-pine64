@@ -144,7 +144,7 @@ __LOOP:
 }
 #endif
 
-int do_boota_linux (struct andr_img_hdr *hdr,void * dtb_base)
+int do_boota_linux (struct andr_img_hdr *hdr,ulong dtb_base)
 {
 	int fake = 0;
 	Kernel_Entry kernel_entry = NULL;
@@ -219,15 +219,18 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	ulong os_load_addr;
 	ulong os_data,os_len;
-	ulong rd_data,rd_len;
+	//ulong rd_data,rd_len;
 	struct  andr_img_hdr *fb_hdr = NULL;
-	void *dtb_base = (void*)CONFIG_SUNXI_FDT_ADDR;
+	ulong dtb_load_addr;
+	//void *dtb_base = (void*)CONFIG_SUNXI_FDT_ADDR;
 
-	if (argc < 2)
+	if (argc < 3)
 		return cmd_usage(cmdtp);
 
 	os_load_addr = simple_strtoul(argv[1], NULL, 16);
 	fb_hdr = (struct andr_img_hdr *)os_load_addr;
+	puts("1\n");
+	dtb_load_addr = simple_strtoul(argv[2], NULL, 16);
 
 	if(android_image_check_header(fb_hdr))
 	{
@@ -235,19 +238,21 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return -1;
 	}
 	android_image_get_kernel(fb_hdr,0,&os_data,&os_len);
-	android_image_get_ramdisk(fb_hdr,&rd_data,&rd_len);
+	//android_image_get_ramdisk(fb_hdr,&rd_data,&rd_len);
 
 	memcpy2((void*) (long)fb_hdr->kernel_addr, (const void *)os_data, os_len);
-	memcpy2((void*) (long)fb_hdr->ramdisk_addr, (const void *)rd_data, rd_len);
+	//memcpy2((void*) (long)fb_hdr->ramdisk_addr, (const void *)rd_data, rd_len);
 
+	puts("2\n");
 	debug("moving sysconfig.bin from %lx to: %lx, size 0x%lx\n", 
 		(ulong)gd->script_reloc_buf,
 		(ulong)(SYS_CONFIG_MEMBASE),
 		gd->script_reloc_size);
+#if 0
 	debug("moving platform.dtb from %lx to: %lx, size 0x%lx\n", 
 		(ulong)dtb_base,
 		(ulong)(gd->fdt_blob),gd->fdt_size);
-	
+
 	memcpy((void*)SYS_CONFIG_MEMBASE, (void*)gd->script_reloc_buf,gd->script_reloc_size);
 
 	update_bootargs();
@@ -262,10 +267,11 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		printf("fdt header check error befor boot\n");
 		return -1;
 	}
+#endif
 
 	tick_printf("ready to boot\n");
 #if 1
-	do_boota_linux(fb_hdr, dtb_base);
+	do_boota_linux(fb_hdr, dtb_load_addr);
 	puts("Boot linux failed, control return to monitor\n");
 #else
 	puts("Boot linux test ok, control return to monitor\n");
