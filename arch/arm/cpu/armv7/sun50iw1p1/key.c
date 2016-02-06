@@ -107,7 +107,7 @@ int sunxi_key_read(void)
 
 	if(key > 0)
 	{
-		printf("key pressed value=0x%x\n", key);
+		debug("key pressed value=0x%x\n", key);
 	}
 
 
