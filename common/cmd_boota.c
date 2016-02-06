@@ -257,8 +257,10 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	update_bootargs();
 
+#endif
 	//update fdt bootargs from env config
 	fdt_chosen(working_fdt);
+#if 0
 	fdt_initrd(working_fdt,(ulong)fb_hdr->ramdisk_addr, (ulong)(fb_hdr->ramdisk_addr+rd_len));
 	//fdt_blob  save the addree of  working_fdt
 	memcpy((void*)dtb_base, gd->fdt_blob,gd->fdt_size);
