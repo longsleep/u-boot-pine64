@@ -221,16 +221,14 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	ulong os_data,os_len;
 	//ulong rd_data,rd_len;
 	struct  andr_img_hdr *fb_hdr = NULL;
-	ulong dtb_load_addr;
-	//void *dtb_base = (void*)CONFIG_SUNXI_FDT_ADDR;
+	ulong dtb_load_addr = getenv_hex("fdtaddr", 0);
 
-	if (argc < 3)
+	if (argc < 2)
 		return cmd_usage(cmdtp);
 
 	os_load_addr = simple_strtoul(argv[1], NULL, 16);
 	fb_hdr = (struct andr_img_hdr *)os_load_addr;
 	puts("1\n");
-	dtb_load_addr = simple_strtoul(argv[2], NULL, 16);
 
 	if(android_image_check_header(fb_hdr))
 	{
@@ -264,12 +262,12 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 	fdt_initrd(working_fdt,(ulong)fb_hdr->ramdisk_addr, (ulong)(fb_hdr->ramdisk_addr+rd_len));
 	//fdt_blob  save the addree of  working_fdt
 	memcpy((void*)dtb_base, gd->fdt_blob,gd->fdt_size);
-	if(fdt_check_header(dtb_base) !=0 )
+#endif
+	if(fdt_check_header((void *)dtb_load_addr) !=0 )
 	{
 		printf("fdt header check error befor boot\n");
 		return -1;
 	}
-#endif
 
 	tick_printf("ready to boot\n");
 #if 1
