@@ -219,7 +219,7 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	ulong os_load_addr;
 	ulong os_data,os_len;
-	//ulong rd_data,rd_len;
+	ulong rd_data,rd_len;
 	struct  andr_img_hdr *fb_hdr = NULL;
 	void *dtb_base  = (void*)getenv_hex("fdtaddr", 0);
 
@@ -236,12 +236,14 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 		return -1;
 	}
 	android_image_get_kernel(fb_hdr,0,&os_data,&os_len);
-	//android_image_get_ramdisk(fb_hdr,&rd_data,&rd_len);
-
-	memcpy2((void*) (long)fb_hdr->kernel_addr, (const void *)os_data, os_len);
-	//memcpy2((void*) (long)fb_hdr->ramdisk_addr, (const void *)rd_data, rd_len);
-
 	puts("2\n");
+	android_image_get_ramdisk(fb_hdr,&rd_data,&rd_len);
+	puts("3\n");
+	memcpy2((void*) (long)fb_hdr->kernel_addr, (const void *)os_data, os_len);
+	puts("4\n");
+	memcpy2((void*) (long)fb_hdr->ramdisk_addr, (const void *)rd_data, rd_len);
+	puts("5\n");
+
 	debug("moving sysconfig.bin from %lx to: %lx, size 0x%lx\n", 
 		(ulong)gd->script_reloc_buf,
 		(ulong)(SYS_CONFIG_MEMBASE),
@@ -257,8 +259,8 @@ int do_boota (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 #endif
 	//update fdt bootargs from env config
 	fdt_chosen(working_fdt);
-#if 0
 	fdt_initrd(working_fdt,(ulong)fb_hdr->ramdisk_addr, (ulong)(fb_hdr->ramdisk_addr+rd_len));
+#if 0
 	//fdt_blob  save the addree of  working_fdt
 	memcpy((void*)dtb_base, gd->fdt_blob,gd->fdt_size);
 #endif
