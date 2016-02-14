@@ -336,24 +336,36 @@
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	"bootdelay=3\0" \
-	"bootcmd=run load_dtb load_kernel set_cmdline boot_kernel\0" \
+	"bootscript=run load_dtb load_kernel set_cmdline boot_kernel\0" \
 	"console=ttyS0,115200\0" \
 	"root=/dev/mmcblk0p2\0" \
+	"load_addr=41000000\0" \
 	"fdt_addr=45000000\0" \
 	"kernel_addr=4107f800\0" \
 	"kernel_filename=kernel.img\0" \
 	"fdt_filename=pine64_plus.dtb\0" \
+	"bootenv_filename=uEnv.txt\0" \
+	"load_bootenv=" \
+		"fatload mmc 0:1 ${load_addr} ${bootenv_filename}\0" \
+	"import_bootenv=" \
+		"env import -t ${load_addr} ${filesize}\0" \
 	"load_dtb=" \
 		"fatload mmc 0:1 ${fdt_addr} ${fdt_filename}; " \
 		"fdt addr ${fdt_addr}; fdt resize\0" \
-	"load_kernel="\
+	"load_kernel=" \
 		"fatload mmc 0:1 ${kernel_addr} ${kernel_filename}\0" \
 	"boot_kernel=boota ${kernel_addr}\0" \
 	"set_cmdline=" \
 		"setenv bootargs console=${console} " \
 		"earlycon=uart,mmio32,0x01c28000 " \
 		"root=${root} ro " \
-		"rootwait\0" 
+		"rootwait\0" \
+	"mmcbootcmd=" \
+		"if run load_bootenv; then " \
+			"echo Loading boot environment ...; " \
+			"run import_bootenv; " \
+		"fi; " \
+		"run bootscript\0"
 
 #define CONFIG_SUNXI_SPRITE_ENV_SETTINGS	\
 	"bootdelay=0\0" \
@@ -362,7 +374,7 @@
 	"sunxi_sprite_test=sprite_test read\0"
 
 #define CONFIG_BOOTDELAY	1
-#define CONFIG_BOOTCOMMAND	"boota"
+#define CONFIG_BOOTCOMMAND	"run bootscript"
 #define CONFIG_SYS_BOOT_GET_CMDLINE
 #define CONFIG_AUTO_COMPLETE
 
