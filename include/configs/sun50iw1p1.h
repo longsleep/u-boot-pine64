@@ -335,7 +335,6 @@
 #define CONFIG_CMD_SAVEENV
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"bootdelay=3\0" \
 	"bootscript=run load_dtb load_kernel set_cmdline boot_kernel\0" \
 	"console=ttyS0,115200\0" \
 	"root=/dev/mmcblk0p2\0" \
@@ -367,14 +366,8 @@
 		"fi; " \
 		"run bootscript\0"
 
-#define CONFIG_SUNXI_SPRITE_ENV_SETTINGS	\
-	"bootdelay=0\0" \
-	"bootcmd=run sunxi_sprite_test\0" \
-	"console=ttyS0,115200\0" \
-	"sunxi_sprite_test=sprite_test read\0"
-
-#define CONFIG_BOOTDELAY	1
-#define CONFIG_BOOTCOMMAND	"run bootscript"
+#define CONFIG_BOOTDELAY	3
+#define CONFIG_BOOTCOMMAND	"run mmcbootcmd"
 #define CONFIG_SYS_BOOT_GET_CMDLINE
 #define CONFIG_AUTO_COMPLETE
 
@@ -383,7 +376,6 @@
 #define CONFIG_CMD_RUN			/* run a command */
 #define CONFIG_CMD_BOOTD		/* boot the default command */
 #define CONFIG_CMD_FASTBOOT
-#define CONFIG_CMD_SUNXI_SPRITE
 #define CONFIG_CMD_SUNXI_TIMER
 #define CONFIG_CMD_SUNXI_EFEX
 #define CONFIG_CMD_SUNXI_SHUTDOWN
@@ -414,5 +406,6 @@
 #define CONFIG_SYS_REDUNDAND_ENVIRONMENT
 #undef CONFIG_MMC_LOGICAL_OFFSET
 #define CONFIG_MMC_LOGICAL_OFFSET 0
+#define CONFIG_CMD_ECHO
 
 #endif /* __CONFIG_H */
