@@ -355,8 +355,8 @@
 		"fatload mmc 0:1 ${kernel_addr} ${kernel_filename}\0" \
 	"boot_kernel=boota ${kernel_addr}\0" \
 	"set_cmdline=" \
-		"setenv bootargs console=${console} " \
-		"earlycon=uart,mmio32,0x01c28000 " \
+		"setenv bootargs console=${console} ${optargs} " \
+		"earlycon=uart,mmio32,0x01c28000 mac_addr=${ethaddr} " \
 		"root=${root} ro " \
 		"rootwait\0" \
 	"mmcbootcmd=" \
