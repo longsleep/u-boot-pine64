@@ -18,9 +18,13 @@
 #include <u-boot/zlib.h>
 #include <asm/byteorder.h>
 #include <libfdt.h>
+#include <asm/io.h>
 #include <fdt_support.h>
+#include <sunxi_board.h>
+#include <power/sunxi/pmu.h>
 #include <asm/bootm.h>
 #include <linux/compiler.h>
+#include <smc.h>
 
 #if defined(CONFIG_ARMV7_NONSEC) || defined(CONFIG_ARMV7_VIRT)
 #include <asm/armv7.h>
@@ -70,6 +74,14 @@ static void announce_and_cleanup(int fake)
 	printf("\nStarting kernel ...%s\n\n", fake ?
 		"(fake run for tracing)" : "");
 	bootstage_mark_name(BOOTSTAGE_ID_BOOTM_HANDOFF, "start_kernel");
+
+	axp_set_next_poweron_status(PMU_PRE_SYS_MODE);
+#ifdef CONFIG_SUNXI_DISPLAY
+	board_display_wait_lcd_open();		//add by jerry
+	board_display_set_exit_mode(1);
+#endif
+	sunxi_board_close_source();
+
 #ifdef CONFIG_BOOTSTAGE_FDT
 	bootstage_fdt_add_report();
 #endif
@@ -248,7 +260,7 @@ static void boot_prep_linux(bootm_headers_t *images)
 /* Subcommand: GO */
 static void boot_jump_linux(bootm_headers_t *images, int flag)
 {
-#ifdef CONFIG_ARM64
+#if defined(CONFIG_ARM64) || defined(CONFIG_MACH_SUN50I)
 	void (*kernel_entry)(void *fdt_addr);
 	int fake = (flag & BOOTM_STATE_OS_FAKE_GO);
 
@@ -260,8 +272,21 @@ static void boot_jump_linux(bootm_headers_t *images, int flag)
 
 	announce_and_cleanup(fake);
 
-	if (!fake)
+	if (!fake) {
+#ifdef CONFIG_ARM64
 		kernel_entry(images->ft_addr);
+#endif
+#ifdef CONFIG_MACH_SUN50I
+		if(sunxi_probe_secure_monitor())
+		{
+			arm_svc_run_os((ulong)images->ep, (ulong)images->ft_addr,  0);
+		}
+		else
+		{
+			kernel_entry(images->ft_addr);
+		}
+#endif
+	}
 #else
 	unsigned long machid = gd->bd->bi_arch_number;
 	char *s;

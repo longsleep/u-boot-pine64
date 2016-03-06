@@ -396,6 +396,9 @@
 //#define CONFIG_SYS_DCACHE_OFF
 
 // Make it actually useful.
+#define CONFIG_SYS_BOOTMAPSZ 0x4000000
+#define CONFIG_MACH_SUN50I
+#define CONFIG_CMD_BOOTI
 #define CONFIG_CMD_EXT4
 #define CONFIG_FAT_WRITE
 #undef CONFIG_ENV_IS_IN_SUNXI_FLASH

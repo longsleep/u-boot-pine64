@@ -666,7 +666,7 @@ static int booti_setup(bootm_headers_t *images)
 	 * If we are not at the correct run-time location, set the new
 	 * correct location and then move the image there.
 	 */
-	dst = gd->bd->bi_dram[0].start + le32_to_cpu(ih->text_offset);
+	dst = gd->bd->bi_dram[0].start + le64_to_cpu(ih->text_offset);
 	if (images->ep != dst) {
 		void *src;
 
@@ -674,7 +674,7 @@ static int booti_setup(bootm_headers_t *images)
 
 		src = (void *)images->ep;
 		images->ep = dst;
-		memmove((void *)(uint32_t)dst, src, le32_to_cpu(ih->image_size));
+		memmove((void *)(ulong)dst, src, le64_to_cpu(ih->image_size));
 	}
 
 	return 0;
@@ -709,7 +709,7 @@ static int booti_start(cmd_tbl_t *cmdtp, int flag, int argc,
 
 	ih = (struct Image_header *)map_sysmem(images->ep, 0);
 
-	lmb_reserve(&images->lmb, images->ep, le32_to_cpu(ih->image_size));
+	lmb_reserve(&images->lmb, images->ep, le64_to_cpu(ih->image_size));
 
 	/*
 	 * Handle the BOOTM_STATE_FINDOTHER state ourselves as we do not
@@ -730,6 +730,13 @@ int do_booti(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 
 	if (booti_start(cmdtp, flag, argc, argv, &images))
 		return 1;
+
+	debug("moving sysconfig.bin from %lx to: %lx, size 0x%lx\n",
+		(ulong)gd->script_reloc_buf,
+		(ulong)(SYS_CONFIG_MEMBASE),
+		gd->script_reloc_size);
+
+	memcpy((void*)SYS_CONFIG_MEMBASE, (void*)gd->script_reloc_buf,gd->script_reloc_size);
 
 	/*
 	 * We are doing the BOOTM_STATE_LOADOS state ourselves, so must
