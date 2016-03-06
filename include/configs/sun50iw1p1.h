@@ -341,7 +341,9 @@
 	"load_addr=41000000\0" \
 	"fdt_addr=45000000\0" \
 	"kernel_addr=4107f800\0" \
+	"initrd_addr=45300000\0" \
 	"kernel_filename=kernel.img\0" \
+	"initrd_filename=initrd.img\0" \
 	"fdt_filename=pine64_plus.dtb\0" \
 	"bootenv_filename=uEnv.txt\0" \
 	"load_bootenv=" \
@@ -354,6 +356,9 @@
 	"load_kernel=" \
 		"fatload mmc 0:1 ${kernel_addr} ${kernel_filename}\0" \
 	"boot_kernel=boota ${kernel_addr}\0" \
+	"load_initrd=" \
+		"fatload mmc 0:1 ${initrd_addr} ${initrd_filename}; "\
+		"setenv initrd_size ${filesize}\0" \
 	"set_cmdline=" \
 		"setenv bootargs console=${console} ${optargs} " \
 		"earlycon=uart,mmio32,0x01c28000 mac_addr=${ethaddr} " \
@@ -397,6 +402,7 @@
 
 // Make it actually useful.
 #define CONFIG_SYS_BOOTMAPSZ 0x4000000
+#define CONFIG_SUPPORT_RAW_INITRD
 #define CONFIG_MACH_SUN50I
 #define CONFIG_CMD_BOOTI
 #define CONFIG_CMD_EXT4
