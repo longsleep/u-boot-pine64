@@ -335,16 +335,16 @@
 #define CONFIG_CMD_SAVEENV
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"bootscript=run load_dtb load_kernel set_cmdline boot_kernel\0" \
+	"bootscript=run load_dtb load_kernel load_initrd set_cmdline boot_kernel\0" \
 	"console=ttyS0,115200\0" \
 	"root=/dev/mmcblk0p2\0" \
 	"load_addr=41000000\0" \
 	"fdt_addr=45000000\0" \
-	"kernel_addr=4107f800\0" \
+	"kernel_addr=41080000\0" \
 	"initrd_addr=45300000\0" \
-	"kernel_filename=kernel.img\0" \
+	"kernel_filename=pine64/Image\0" \
+	"fdt_filename=pine64/sun50i-a64-pine64-plus.dtb\0" \
 	"initrd_filename=initrd.img\0" \
-	"fdt_filename=pine64_plus.dtb\0" \
 	"bootenv_filename=uEnv.txt\0" \
 	"load_bootenv=" \
 		"fatload mmc 0:1 ${load_addr} ${bootenv_filename}\0" \
@@ -355,7 +355,7 @@
 		"fdt addr ${fdt_addr}; fdt resize\0" \
 	"load_kernel=" \
 		"fatload mmc 0:1 ${kernel_addr} ${kernel_filename}\0" \
-	"boot_kernel=boota ${kernel_addr}\0" \
+	"boot_kernel=booti ${kernel_addr} ${initrd_addr}:${initrd_size} ${fdt_addr}\0" \
 	"load_initrd=" \
 		"fatload mmc 0:1 ${initrd_addr} ${initrd_filename}; "\
 		"setenv initrd_size ${filesize}\0" \
