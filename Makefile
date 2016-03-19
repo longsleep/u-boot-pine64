@@ -8,7 +8,7 @@
 VERSION = 2014
 PATCHLEVEL = 07
 SUBLEVEL =
-EXTRAVERSION = -2-pine64
+EXTRAVERSION = -3-pine64
 NAME = Pine64 longsleep Cuba Libre
 
 
