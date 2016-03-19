@@ -219,6 +219,7 @@
 #define CONFIG_CMD_BOOTA
 #define CONFIG_SUNXI_DMA
 #define CONFIG_CMD_MEMORY
+#define CONFIG_CMD_MEMINFO
 
 
 #define SUNXI_DMA_LINK_NULL       (0x1ffff800)
@@ -343,7 +344,8 @@
 	"kernel_addr=41080000\0" \
 	"initrd_addr=45300000\0" \
 	"kernel_filename=pine64/Image\0" \
-	"fdt_filename=pine64/sun50i-a64-pine64-plus.dtb\0" \
+	"fdt_filename_prefix=pine64/sun50i-a64-\0" \
+	"fdt_filename_suffix=.dtb\0" \
 	"initrd_filename=initrd.img\0" \
 	"bootenv_filename=uEnv.txt\0" \
 	"load_bootenv=" \
@@ -351,6 +353,9 @@
 	"import_bootenv=" \
 		"env import -t ${load_addr} ${filesize}\0" \
 	"load_dtb=" \
+		"if test ${fdt_filename} = \"\"; then " \
+			"setenv fdt_filename ${fdt_filename_prefix}${pine64_model}${fdt_filename_suffix}; " \
+		"fi; " \
 		"fatload mmc 0:1 ${fdt_addr} ${fdt_filename}; " \
 		"fdt addr ${fdt_addr}; fdt resize\0" \
 	"load_kernel=" \
@@ -417,4 +422,5 @@
 #define CONFIG_MMC_LOGICAL_OFFSET 0
 #define CONFIG_CMD_ECHO
 
+#define CONFIG_PINE64_MODEL
 #endif /* __CONFIG_H */

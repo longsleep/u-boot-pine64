@@ -11,6 +11,7 @@
 #include "debug_mode.h"
 #include "sunxi_string.h"
 #include "sunxi_serial.h"
+#include "pine64_model.h"
 #include <fdt_support.h>
 #include <arisc.h>
 
@@ -520,6 +521,9 @@ int board_late_init(void)
 		ret = update_fdt_para_for_kernel(working_fdt);
 #ifdef CONFIG_SUNXI_SERIAL
                 sunxi_set_serial_num();
+#endif
+#ifdef CONFIG_PINE64_MODEL
+		pine64_set_model();
 #endif
 		return 0;
 	}
