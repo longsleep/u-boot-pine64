@@ -336,7 +336,8 @@
 #define CONFIG_CMD_SAVEENV
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
-	"bootscript=run load_dtb load_kernel load_initrd set_cmdline boot_kernel\0" \
+	"script=boot.scr\0" \
+	"mmcboot=run load_dtb load_kernel load_initrd set_cmdline boot_kernel\0" \
 	"console=ttyS0,115200\0" \
 	"root=/dev/mmcblk0p2\0" \
 	"load_addr=41000000\0" \
@@ -364,6 +365,9 @@
 	"load_initrd=" \
 		"fatload mmc 0:1 ${initrd_addr} ${initrd_filename}; "\
 		"setenv initrd_size ${filesize}\0" \
+	"load_bootscript=" \
+		"fatload mmc 0:1 ${load_addr} ${script}\0" \
+	"scriptboot=source ${load_addr}\0" \
 	"set_cmdline=" \
 		"setenv bootargs console=${console} ${optargs} " \
 		"earlycon=uart,mmio32,0x01c28000 mac_addr=${ethaddr} " \
@@ -374,7 +378,13 @@
 			"echo Loading boot environment ...; " \
 			"run import_bootenv; " \
 		"fi; " \
-		"run bootscript\0"
+		"if run load_bootscript; then " \
+			"echo Booting with script ...; " \
+			"run scriptboot; " \
+		"else " \
+			"echo Booting with defaults ...; " \
+			"run mmcboot; " \
+		"fi\0"
 
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTCOMMAND	"run mmcbootcmd"
@@ -421,6 +431,7 @@
 #undef CONFIG_MMC_LOGICAL_OFFSET
 #define CONFIG_MMC_LOGICAL_OFFSET 0
 #define CONFIG_CMD_ECHO
+#define CONFIG_CMD_SOURCE
 
 #define CONFIG_PINE64_MODEL
 #endif /* __CONFIG_H */
