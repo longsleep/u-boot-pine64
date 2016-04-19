@@ -539,7 +539,7 @@ int board_display_device_open(void)
 			printf("fetch script data boot_disp.output_mode fail\n");
 			err_count ++;
 		} else
-			printf("boot_disp.output_type=%d\n", output_mode);
+			printf("boot_disp.output_mode=%d\n", output_mode);
 
 		/* getproc auto_hpd, indicate output device decided by the hot plug status of device */
 		if (fdt_getprop_u32(working_fdt, node, "auto_hpd", (uint32_t*)&auto_hpd) < 0) {
