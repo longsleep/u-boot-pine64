@@ -44,10 +44,6 @@
  */
 #if !defined(CONFIG_ARCH_SUPPORTS_OPTIMIZED_INLINING) || \
     !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
-/* XXX: check __GNUC_STDC_INLINE__, fix line length */
-#define inline		inline		__attribute__((always_inline)) __attribute__((__gnu_inline__))
-#define __inline__	__inline__	__attribute__((always_inline)) __attribute__((__gnu_inline__))
-#define __inline	__inline	__attribute__((always_inline)) __attribute__((__gnu_inline__))
 /*
 # define inline		inline		__attribute__((always_inline))
 # define __inline__	__inline__	__attribute__((always_inline))
