@@ -246,12 +246,12 @@ int sunxi_pwm_config(struct sunxi_pwm_chip* pchip, int duty_ns, int period_ns)
         entire_cycles = 24000000 / freq / pre_scal[pre_scal_id][1];
         }
 
-    if(period_ns < 5*100*1000)
-        active_cycles = (duty_ns * entire_cycles + (period_ns/2)) /period_ns;
-    else if(period_ns >= 5*100*1000 && period_ns < 6553500)
-        active_cycles = ((duty_ns / 100) * entire_cycles + (period_ns /2 / 100)) / (period_ns/100);
-    else
-        active_cycles = ((duty_ns / 10000) * entire_cycles + (period_ns /2 / 10000)) / (period_ns/10000);
+	if(period_ns < 5*100*1000)
+		active_cycles = (duty_ns * entire_cycles + (period_ns/2)) /period_ns;
+	else if(period_ns >= 5*100*1000 && period_ns < 6553500)
+		active_cycles = ((duty_ns / 100) * entire_cycles + (period_ns /2 / 100)) / (period_ns/100);
+	else
+		active_cycles = ((duty_ns / 10000) * entire_cycles + (period_ns /2 / 10000)) / (period_ns/10000);
 
 	reg_offset = pchip->config->reg_prescal_offset;
 	reg_shift = pchip->config->reg_prescal_shift;

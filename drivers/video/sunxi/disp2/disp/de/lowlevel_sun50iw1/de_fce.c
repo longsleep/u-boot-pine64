@@ -476,16 +476,16 @@ static void auto_ce_model(unsigned int width, unsigned height, unsigned int sumc
 	    else
 	        black_str_lv=black_thr*1/3+ (p_hist_data->hist_mean*black_thr/(64*3));
 
-		//generate p
-		if (hist[lowest_black]>mean)
-			hist_r[lowest_black] = mean;
-		else if (hist[lowest_black]>black_str_lv)
-			hist_r[lowest_black] = hist[lowest_black];
-		else
-			hist_r[lowest_black] = black_str_lv;//hist[i];
+	    //generate p
+	    if (hist[lowest_black]>mean)
+	        hist_r[lowest_black] = mean;
+	    else if (hist[lowest_black]>black_str_lv)
+	        hist_r[lowest_black] = hist[lowest_black];
+	    else
+	        hist_r[lowest_black] = black_str_lv;//hist[i];
 
-		total_pixel_r = hist_r[lowest_black];
-		p[lowest_black] = hist_r[lowest_black];
+	    total_pixel_r = hist_r[lowest_black];
+	    p[lowest_black] = hist_r[lowest_black];
 
 	    //black zone
 	    for (i=lowest_black+1; i<p_hist_data->black_thr0; i++)
@@ -508,10 +508,10 @@ static void auto_ce_model(unsigned int width, unsigned height, unsigned int sumc
 	    	else if (hist[i]>lthr)
 	    		hist_r[i] = hist[i];
 	    	else
-	        	hist_r[i] = lthr;//hist[i];
+	    		hist_r[i] = lthr;//hist[i];
 
-			total_pixel_r = total_pixel_r + hist_r[i];
-			p[i] = p[i-1] + hist_r[i];
+	    	total_pixel_r = total_pixel_r + hist_r[i];
+	    	p[i] = p[i-1] + hist_r[i];
 	    }
 
 		if (p_hist_data->white_thr0 >= 256)
@@ -787,8 +787,8 @@ static void auto_bws_model(unsigned int width, unsigned int height, unsigned int
 
 
 
-    	if (pd_s1==256)
-      		pd_s0=256;
+		if (pd_s1==256)
+			pd_s0=256;
 
 		tmp =  pd_white + ((pd_s2 * (pd_ymax - pd_white)		)>>8);
 		if (		(tmp < 255)	&& (pd_ymax > pd_white)  && (pd_ymax < 255))
