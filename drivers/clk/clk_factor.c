@@ -48,8 +48,8 @@ static void sunxi_clk_fators_disable(struct clk_hw *hw)
 	if(factor->flags & CLK_IGNORE_DISABLE)
         return;
 
-    if(config->sdmwidth)
-        reg = SET_BITS(config->sdmshift, config->sdmwidth, reg, 0);
+	if(config->sdmwidth)
+		reg = SET_BITS(config->sdmshift, config->sdmwidth, reg, 0);
 	if(config->updshift) //update for pll_ddr register
 		reg = SET_BITS(config->updshift, 1, reg, 1);
 
