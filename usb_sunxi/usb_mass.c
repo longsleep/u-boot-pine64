@@ -797,8 +797,17 @@ static int sunxi_mass_state_loop(void  *buffer)
 					{
 						memset(trans_data.base_send_buffer, 0, 8);
 
-						trans_data.base_send_buffer[2] = 0x80;
-						trans_data.base_send_buffer[6] = 2;
+						uint size = sunxi_flash_size() - CONFIG_MMC_LOGICAL_OFFSET - 1;
+						trans_data.base_send_buffer[0] = (size >> 24) & 0xFF;
+						trans_data.base_send_buffer[1] = (size >> 16) & 0xFF;
+						trans_data.base_send_buffer[2] = (size >> 8) & 0xFF;
+						trans_data.base_send_buffer[3] = (size >> 0) & 0xFF;
+
+						size = 512;
+						trans_data.base_send_buffer[4] = (size >> 24) & 0xFF;
+						trans_data.base_send_buffer[5] = (size >> 16) & 0xFF;
+						trans_data.base_send_buffer[6] = (size >> 8) & 0xFF;
+						trans_data.base_send_buffer[7] = (size >> 0) & 0xFF;
 
 						trans_data.act_send_buffer = trans_data.base_send_buffer;
 						trans_data.send_size 	   = min(cbw->dCBWDataTransferLength, 8);
@@ -841,7 +850,6 @@ static int sunxi_mass_state_loop(void  *buffer)
 	  				sunxi_usb_dbg("asked size 0x%x\n", cbw->dCBWDataTransferLength);
 					{
 						uint start, sectors;
-						uint offset;
 
 						start = (cbw->CBWCDB[2]<<24) | cbw->CBWCDB[3]<<16 | cbw->CBWCDB[4]<<8 | cbw->CBWCDB[5]<<0;
 						sectors = (cbw->CBWCDB[7]<<8) | cbw->CBWCDB[8];
@@ -849,8 +857,7 @@ static int sunxi_mass_state_loop(void  *buffer)
 
 						trans_data.send_size 	   = min(cbw->dCBWDataTransferLength, sectors * 512);
 						trans_data.act_send_buffer = trans_data.base_send_buffer;
-						offset = sunxi_partition_get_offset(0);
-						ret = sunxi_flash_read(start + offset, sectors, trans_data.base_send_buffer);
+						ret = sunxi_flash_read(start, sectors, trans_data.base_send_buffer);
 						if(!ret)
 						{
 							printf("sunxi flash read err: start,0x%x sectors 0x%x\n", start, sectors);
@@ -879,7 +886,6 @@ static int sunxi_mass_state_loop(void  *buffer)
 					trans_data.recv_size 	   = min(cbw->dCBWDataTransferLength, mass_flash_sectors * 512);
 					trans_data.act_recv_buffer = trans_data.base_recv_buffer;
 
-					mass_flash_start += sunxi_partition_get_offset(0);
 					sunxi_usb_dbg("try to receive data 0x%x\n", trans_data.recv_size);
 
 					sunxi_usb_mass_write_enable = 0;

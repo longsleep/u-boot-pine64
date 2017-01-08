@@ -47,6 +47,7 @@ obj-$(CONFIG_CMD_BOOTA) += cmd_boota.o cmd_sunxi_flash.o
 obj-$(CONFIG_CMD_SUNXI_SPRITE) += cmd_sunxi_sprite.o
 obj-$(CONFIG_CMD_SUNXI_TIMER) += cmd_sunxi_timer.o
 obj-$(CONFIG_CMD_SUNXI_EFEX) += cmd_sunxi_efex.o
+obj-$(CONFIG_CMD_SUNXI_UMS) += cmd_sunxi_ums.o
 obj-$(CONFIG_CMD_SUNXI_SHUTDOWN) += cmd_sunxi_shutdown.o
 obj-$(CONFIG_CMD_SUNXI_MEMTEST) += cmd_sunxi_memtest.o
 ifdef CONFIG_SUNXI_DISPLAY
