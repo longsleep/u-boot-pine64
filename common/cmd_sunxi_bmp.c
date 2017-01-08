@@ -60,7 +60,7 @@ static int do_sunxi_bmp_info(cmd_tbl_t * cmdtp, int flag, int argc, char * const
 	{
 		char  load_addr[8];
 		char  filename[32];
-		char *const bmp_argv[6] = { "fatload", "mcc", "0:1", load_addr, filename, NULL };
+		char *const bmp_argv[6] = { "fatload", "mcc", getenv("boot_part"), load_addr, filename, NULL };
 
 		addr = simple_strtoul(argv[1], NULL, 16);
 		memcpy(load_addr, argv[1], 8);
@@ -121,7 +121,7 @@ static int do_sunxi_bmp_display(cmd_tbl_t * cmdtp, int flag, int argc, char * co
 	{
 		char  load_addr[8];
 		char  filename[32];
-		char *const bmp_argv[6] = { "fatload", "mmc", "0:1", load_addr, filename, NULL };
+		char *const bmp_argv[6] = { "fatload", "mmc", getenv("boot_part"), load_addr, filename, NULL };
 
 		addr = simple_strtoul(argv[1], NULL, 16);
 		memcpy(load_addr, argv[1], 8);
@@ -187,7 +187,7 @@ int sunxi_bmp_display(char *name)
 	int  ret = -1;
 	//const size_t bmp_buff_len = 10<<20; //10M
 	//size_t file_size = 0;
-	char * bmp_argv[6] = { "fatload", "mmc", "0:1", "00000000", bmp_name, NULL };
+	char * bmp_argv[6] = { "fatload", "mmc", getenv("boot_part"), "00000000", bmp_name, NULL };
 
 	// free() function  will  take a long time,so not use malloc memory
 	bmp_buff = (char*)CONFIG_SYS_SDRAM_BASE; 
