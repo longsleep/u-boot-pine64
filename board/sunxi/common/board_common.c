@@ -157,7 +157,11 @@ static int detect_other_boot_mode(void)
 
 	keyvalue = gd->key_pressd_value;
 	printf("key %d\n", keyvalue);
-	
+
+	char buf[8];
+	sprintf(buf, "%d", keyvalue);
+	setenv("boot_key", buf);
+
 	//check recovery key
 	nodeoffset = fdt_path_offset(working_fdt,FDT_PATH_RECOVERY_KEY);
 	if(nodeoffset >= 0)
