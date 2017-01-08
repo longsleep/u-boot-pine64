@@ -6,8 +6,11 @@ DECLARE_GLOBAL_DATA_PTR;
 int get_model_from_dram_size(char* model)
 {
 	phys_size_t l = 512 * 1024 * 1024;
-	puts("get Pine64 model from DRAM size\n");
-	if (gd->ram_size > l) {
+	puts("get Pine64 model from DRAM size and used storage\n");
+	if (uboot_spare_head.boot_data.storage_type == STORAGE_EMMC) {
+		puts("EMMC storage\n");
+		sprintf(model, "pine64-pinebook");
+	} else if (gd->ram_size > l) {
 		puts("DRAM >512M\n");
 		sprintf(model, "pine64-plus");
 	} else {
