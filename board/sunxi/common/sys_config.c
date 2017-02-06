@@ -1273,9 +1273,9 @@ int fdt_get_all_pin(int nodeoffset,const char* pinctrl_name,user_gpio_set_t* gpi
 	char *function = NULL;
 	int  ret;
 	char path_tmp[128] = {0};
-	char port_name[20][12]; //format PA0,PB6 ....
-	char pin_name[20][64] = {{0}}; //
-	u32 handle[10] = {0};
+	char port_name[32][12]; //format PA0,PB6 ....
+	char pin_name[32][64] = {{0}}; //
+	u32 handle[32] = {0};
 	int handle_num = 0;
 	int i,j;
 	int name_num = 0,port_num = 0;
