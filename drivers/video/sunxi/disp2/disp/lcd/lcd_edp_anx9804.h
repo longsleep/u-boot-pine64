@@ -694,3 +694,5 @@
 //void anx9804_init(__panel_para_t * info);
 
 #endif
+
+int has_anx9807_chip(void);

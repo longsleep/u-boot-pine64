@@ -798,6 +798,22 @@ static s32 LCD_user_defined_func(u32 sel, u32 para1, u32 para2, u32 para3)
 	return 0;
 }
 
+int has_anx9807_chip(void)
+{
+	__u8 c = 0;
+
+	//Power on total and select DP mode
+	lcd_iic_write(0x72, DP_POWERD_CTRL_REG, 0x30);
+
+	//get chip ID. Make sure I2C is OK
+	lcd_iic_read(0x72, 0x01 , &c);
+	if (c == 0xaa) {
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
 __lcd_panel_t anx9804_panel = {
 	/* panel driver name, must mach the name of lcd_drv_name in sys_config.fex */
 	.name = "anx9804_panel",
