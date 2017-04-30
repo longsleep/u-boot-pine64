@@ -391,6 +391,17 @@ int fdt_chosen(void *fdt)
 		}
 	}
 
+	str = getenv("pine64_model");
+	if (str) {
+		err = fdt_setprop(fdt, nodeoffset, "pine64-model", str,
+				  strlen(str) + 1);
+		if (err < 0) {
+			printf("WARNING: could not set pine64-model %s.\n",
+			       fdt_strerror(err));
+			return err;
+		}
+	}
+
 	return fdt_fixup_stdout(fdt, nodeoffset);
 }
 
