@@ -1449,7 +1449,7 @@ int fdt_delprop(void *fdt, int nodeoffset, const char *name);
  * full path.
  */
 int fdt_add_subnode_namelen(void *fdt, int parentoffset,
-			    const char *name, int namelen);
+			    const char *name, int namelen, int atend);
 
 /**
  * fdt_add_subnode - creates a new node

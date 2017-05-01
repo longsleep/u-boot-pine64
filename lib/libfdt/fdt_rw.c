@@ -291,12 +291,13 @@ int fdt_delprop(void *fdt, int nodeoffset, const char *name)
 }
 
 int fdt_add_subnode_namelen(void *fdt, int parentoffset,
-			    const char *name, int namelen)
+			    const char *name, int namelen, int atend)
 {
 	struct fdt_node_header *nh;
 	int offset, nextoffset;
 	int nodelen;
 	int err;
+	int level = 0;
 	uint32_t tag;
 	fdt32_t *endtag;
 
@@ -310,10 +311,23 @@ int fdt_add_subnode_namelen(void *fdt, int parentoffset,
 
 	/* Try to place the new node after the parent's properties */
 	fdt_next_tag(fdt, parentoffset, &nextoffset); /* skip the BEGIN_NODE */
+	level = 1;
 	do {
 		offset = nextoffset;
 		tag = fdt_next_tag(fdt, offset, &nextoffset);
-	} while ((tag == FDT_PROP) || (tag == FDT_NOP));
+		if ((tag == FDT_PROP) || (tag == FDT_NOP)) {
+			continue;
+		} else if (atend && tag == FDT_BEGIN_NODE) {
+			++level;
+		} else if (atend && tag == FDT_END_NODE) {
+			--level;
+			if (level <= 0) {
+				break;
+			}
+		} else {
+			break;
+		}
+	} while (true);
 
 	nh = _fdt_offset_ptr_w(fdt, offset);
 	nodelen = sizeof(*nh) + FDT_TAGALIGN(namelen+1) + FDT_TAGSIZE;
@@ -333,7 +347,7 @@ int fdt_add_subnode_namelen(void *fdt, int parentoffset,
 
 int fdt_add_subnode(void *fdt, int parentoffset, const char *name)
 {
-	return fdt_add_subnode_namelen(fdt, parentoffset, name, strlen(name));
+	return fdt_add_subnode_namelen(fdt, parentoffset, name, strlen(name), 0);
 }
 
 int fdt_del_node(void *fdt, int nodeoffset)

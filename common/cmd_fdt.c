@@ -31,6 +31,7 @@ DECLARE_GLOBAL_DATA_PTR;
 static int fdt_valid(struct fdt_header **blobp);
 static int fdt_parse_prop(char *const*newval, int count, char *data, int *len);
 static int fdt_print(const char *pathp, char *prop, int depth);
+static int fdt_dup(const char *pathp, char *old_prop, char *new_prop);
 static int is_printable_string(const void *data, int len);
 
 extern int sunxi_flash_update_fdt(void* fdt_buf, size_t size);
@@ -431,6 +432,26 @@ static int do_fdt(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			prop = NULL;
 
 		ret = fdt_print(pathp, prop, depth);
+		if (ret != 0)
+			return ret;
+
+	/*
+	 * Duplicate node
+	 */
+	} else if ((argv[1][0] == 'd')) {
+		char *pathp;		/* path */
+		char *old_prop;		/* property */
+		char *new_prop;		/* property */
+		int  ret;		/* return value */
+
+		if (argc < 5)
+			return CMD_RET_USAGE;
+
+		pathp = argv[2];
+		old_prop = argv[3];
+		new_prop = argv[4];
+
+		ret = fdt_dup(pathp, old_prop, new_prop);
 		if (ret != 0)
 			return ret;
 
@@ -1013,6 +1034,126 @@ static int fdt_print(const char *pathp, char *prop, int depth)
 	return 0;
 }
 
+static int fdt_dup(const char *pathp, char *old_prop, char *new_prop)
+{
+	static char tabs[MAX_LEVEL+2] =
+		"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t"
+		"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+	const void *nodep;	/* property node pointer */
+	int  parentoffset;
+	int  nodeoffset;	/* node offset from libfdt */
+	int  nextoffset;	/* next node offset from libfdt */
+	uint32_t tag;		/* tag */
+	int  len;		/* length of the property */
+	int  level = 0;		/* keep track of nesting level */
+	int  ret;
+	const struct fdt_property *fdt_prop;
+	int newoffset[MAX_LEVEL];
+
+	printf("[FDT] duplicating %s of %s to %s...\n", old_prop, pathp, new_prop);
+
+	parentoffset = fdt_path_offset (working_fdt, pathp);
+	if (parentoffset < 0) {
+		printf ("libfdt fdt_path_offset() returned %s\n",
+			fdt_strerror(parentoffset));
+		return 1;
+	}
+
+	nodeoffset = fdt_subnode_offset (working_fdt, parentoffset, old_prop);
+	if (nodeoffset < 0) {
+		printf ("libfdt fdt_subnode_offset() returned %s\n",
+			fdt_strerror(nodeoffset));
+		return 1;
+	}
+
+	newoffset[level] = parentoffset;
+
+	/*
+	 * The user passed in a node path and no property,
+	 * print the node and all subnodes.
+	 */
+	while(level >= 0) {
+		tag = fdt_next_tag(working_fdt, nodeoffset, &nextoffset);
+		switch(tag) {
+		case FDT_BEGIN_NODE:
+			pathp = fdt_get_name(working_fdt, nodeoffset, NULL);
+			if (pathp == NULL)
+				pathp = "/* NULL pointer error */";
+			if (*pathp == '\0')
+				pathp = "/";	/* root is nameless */
+			printf("%s%s {\n",
+				&tabs[MAX_LEVEL - level], pathp);
+
+			// Overwrite the name of created node
+			if (level == 0) {
+				pathp = new_prop;
+			}
+
+			level++;
+			if (level >= MAX_LEVEL) {
+				printf("Nested too deep, aborting.\n");
+				return 1;
+			}
+
+			newoffset[level] = fdt_add_subnode_namelen(working_fdt, newoffset[level-1], 
+				pathp, strlen(pathp), 1);
+			if (newoffset[level] < 0) {
+				printf ("libfdt fdt_add_subnode() returned %s\n",
+					fdt_strerror(newoffset[level]));
+				return 1;
+			}
+			break;
+		case FDT_END_NODE:
+			level--;
+
+			printf("%s};\n", &tabs[MAX_LEVEL - level]);
+		
+			if (level == 0) {
+				level = -1;		/* exit the loop */
+			}
+			break;
+		case FDT_PROP:
+			fdt_prop = fdt_offset_ptr(working_fdt, nodeoffset,
+					sizeof(*fdt_prop));
+			pathp    = fdt_string(working_fdt,
+					fdt32_to_cpu(fdt_prop->nameoff));
+			len      = fdt32_to_cpu(fdt_prop->len);
+			nodep    = fdt_prop->data;
+			if (len < 0) {
+				printf ("libfdt fdt_getprop(): %s\n",
+					fdt_strerror(len));
+				return 1;
+			} else if(len == 0) {
+				printf("%s%s;\n",
+					&tabs[MAX_LEVEL - level],
+					pathp);
+			} else {
+				printf("%s%s = ",
+					&tabs[MAX_LEVEL - level],
+					pathp);
+				print_data (nodep, len);
+				printf(";\n");
+			}
+			ret = fdt_appendprop(working_fdt, newoffset[level], pathp, nodep, len);
+			if (ret < 0) {
+				printf ("libfdt fdt_setprop(): %s\n", fdt_strerror(ret));
+				return 1;
+			}
+			break;
+		case FDT_NOP:
+			printf("%s/* NOP */\n", &tabs[MAX_LEVEL - level]);
+			break;
+		case FDT_END:
+			return 1;
+		default:
+			printf("Unknown tag 0x%08X\n", tag);
+			return 1;
+		}
+		nodeoffset = nextoffset;
+	}
+	return 0;
+}
+
 /********************************************************************/
 #ifdef CONFIG_SYS_LONGHELP
 static char fdt_help_text[] =
@@ -1031,6 +1172,7 @@ static char fdt_help_text[] =
 	"fdt set    <path> <prop> [<val>]    - Set <property> [to <val>]\n"
 	"fdt mknode <path> <node>            - Create a new node after <path>\n"
 	"fdt rm     <path> [<prop>]          - Delete the node or <property>\n"
+	"fdt dup    <path> <old> <new>       - Duplicate the <old-node> under <path> to <new>"
 	"fdt header                          - Display header info\n"
 	"fdt bootcpu <id>                    - Set boot cpuid\n"
 	"fdt memory <addr> <size>            - Add/Update memory node\n"
