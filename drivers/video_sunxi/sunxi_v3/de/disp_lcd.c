@@ -598,7 +598,7 @@ static void lcd_get_sys_config(u32 disp, __disp_lcd_cfg_t *lcd_cfg)
                          "lcdd23", "lcdclk", "lcdde", "lcdhsync", "lcdvsync"};
     disp_gpio_set_t  *gpio_info;
     int  value = 1;
-    char primary_key[20], sub_name[25];
+    char primary_key[32], sub_name[40];
     int i = 0;
     int  ret;
 
@@ -1630,7 +1630,7 @@ static disp_lcd_flow * disp_lcd_get_open_flow(struct disp_device* lcd)
 	lcdp->open_flow.func[lcdp->open_flow.func_num].func = disp_lcd_pre_enable_ex;
 	lcdp->open_flow.func[lcdp->open_flow.func_num].delay = 0;
 	lcdp->open_flow.func_num ++;
-	
+
 	if(lcdp->lcd_panel_fun.cfg_open_flow)	{
 		lcdp->lcd_panel_fun.cfg_open_flow(lcd->disp);
 	}	else {
@@ -1656,7 +1656,7 @@ static disp_lcd_flow * disp_lcd_get_close_flow(struct disp_device* lcd)
 	lcdp->close_flow.func[lcdp->close_flow.func_num].func = disp_lcd_pre_disable_ex;
 	lcdp->close_flow.func[lcdp->close_flow.func_num].delay = 0;
 	lcdp->close_flow.func_num ++;
-	
+
 	if(lcdp->lcd_panel_fun.cfg_close_flow)	{
 		lcdp->lcd_panel_fun.cfg_close_flow(lcd->disp);
 	}	else {
@@ -1951,4 +1951,3 @@ s32 disp_init_lcd(disp_bsp_init_para * para)
 
 	return 0;
 }
-

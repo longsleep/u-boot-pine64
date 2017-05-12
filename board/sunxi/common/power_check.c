@@ -34,7 +34,7 @@ int sunxi_bmp_display(char * name)
 	__attribute__((weak, alias("__sunxi_bmp_display")));
 
 
-
+#if 0
 static void UpdateChargeVariable(void)
 {
 	#if 0
@@ -47,7 +47,7 @@ static void UpdateChargeVariable(void)
 	//the default mode is use Android charge
 	gd->chargemode = 1;
 }
-
+#endif
 
 static void EnterNormalShutDownMode(void)
 {
@@ -77,7 +77,13 @@ static void EnterAndroidChargeMode(void)
 {
 	printf("sunxi_bmp_charger_display\n");
 	sunxi_bmp_display("bat\\battery_charge.bmp");
+#if 1	/* shutdowon instead of update charge variable */
+	__msdelay(3000);
+	sunxi_board_shutdown();
+	for(;;);
+#else
 	UpdateChargeVariable();
+#endif
 }
 
 static void EnterNormalBootMode(void)

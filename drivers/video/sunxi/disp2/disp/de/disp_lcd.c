@@ -602,7 +602,7 @@ static void lcd_get_sys_config(u32 disp, disp_lcd_cfg *lcd_cfg)
 {
     disp_gpio_set_t  *gpio_info;
     int  value = 1;
-    char primary_key[20], sub_name[25];
+    char primary_key[32], sub_name[40];
     int i = 0;
     int  ret;
 
