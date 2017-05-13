@@ -352,7 +352,9 @@
 	"initrd_filename=initrd.img\0" \
 	"bootenv_filename=uEnv.txt\0" \
 	"load_bootenv=" \
-		"fatload mmc ${boot_part} ${load_addr} ${bootenv_filename}\0" \
+		"if test -e mmc ${boot_part} ${bootenv_filename}; then " \
+			"load mmc ${boot_part} ${load_addr} ${bootenv_filename}; " \
+		"fi\0" \
 	"import_bootenv=" \
 		"env import -t ${load_addr} ${filesize}\0" \
 	"load_dtb=" \
@@ -368,7 +370,13 @@
 		"fatload mmc ${boot_part} ${initrd_addr} ${initrd_filename}; "\
 		"setenv initrd_size ${filesize}\0" \
 	"load_bootscript=" \
-		"fatload mmc ${boot_part} ${load_addr} ${script}\0" \
+		"for prefix in / /boot/; do " \
+			"if test -e mmc ${boot_part} ${prefix}${script}; then " \
+				"load mmc ${boot_part} ${load_addr} ${prefix}${script}; " \
+				"echo Booting with script ...; " \
+				"run scriptboot; "\
+			"fi; "\
+		"done\0" \
 	"scriptboot=source ${load_addr}\0" \
 	"set_cmdline=" \
 		"setenv bootargs console=${console} ${optargs} " \
@@ -380,13 +388,9 @@
 			"echo Loading boot environment ...; " \
 			"run import_bootenv; " \
 		"fi; " \
-		"if run load_bootscript; then " \
-			"echo Booting with script ...; " \
-			"run scriptboot; " \
-		"else " \
-			"echo Booting with defaults ...; " \
-			"run mmcboot; " \
-		"fi\0"
+		"run load_bootscript; " \
+		"echo Booting with defaults ...; " \
+		"run mmcboot; \0"
 
 #define CONFIG_BOOTDELAY	3
 #define CONFIG_BOOTCOMMAND	"run mmcbootcmd"
